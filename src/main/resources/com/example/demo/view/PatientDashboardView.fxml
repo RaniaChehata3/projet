@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.chart.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.org/fxml"
+            fx:controller="com.example.demo.controller.PatientDashboardController"
+            styleClass="modern-container"
+            stylesheets="@../css/modern-theme.css">
+    
+    <!-- Top Bar with application logo, search, user info -->
+    <top>
+        <HBox styleClass="top-bar">
+            <!-- Logo and title -->
+            <HBox styleClass="logo-container" alignment="CENTER_LEFT" spacing="10">
+                <ImageView fx:id="logoImage" fitHeight="40" fitWidth="40" pickOnBounds="true" preserveRatio="true"/>
+                <Label text="SahaCare Patient" styleClass="app-title"/>
+            </HBox>
+            
+            <Region HBox.hgrow="ALWAYS" />
+            
+            <!-- User Information -->
+            <HBox alignment="CENTER_RIGHT" spacing="15">
+                <Button fx:id="notificationsButton" styleClass="icon-button">
+                    <graphic>
+                        <StackPane>
+                            <ImageView fitHeight="20" fitWidth="20" pickOnBounds="true" preserveRatio="true" />
+                            <Circle fx:id="notificationBadge" radius="5" fill="#ff4757" visible="false" 
+                                   translateX="6" translateY="-6"/>
+                        </StackPane>
+                    </graphic>
+                </Button>
+                
+                <Separator orientation="VERTICAL" />
+                
+                <HBox alignment="CENTER" spacing="10" styleClass="user-info">
+                    <StackPane styleClass="user-avatar">
+                        <Label fx:id="userInitials" text="JS" />
+                    </StackPane>
+                    
+                    <VBox>
+                        <Label fx:id="userNameLabel" text="John Smith" styleClass="user-name"/>
+                        <Label fx:id="userRoleLabel" text="Patient" styleClass="user-role"/>
+                    </VBox>
+                    
+                    <MenuButton styleClass="user-menu-button">
+                        <items>
+                            <MenuItem text="My Profile" onAction="#handleViewProfile"/>
+                            <MenuItem text="Account Settings" onAction="#handleSettings"/>
+                            <SeparatorMenuItem />
+                            <MenuItem text="Logout" onAction="#handleLogout"/>
+                        </items>
+                    </MenuButton>
+                </HBox>
+            </HBox>
+        </HBox>
+    </top>
+    
+    <!-- Left Sidebar Navigation -->
+    <left>
+        <VBox styleClass="sidebar">
+            <!-- Main Navigation -->
+            <ListView fx:id="navigationList" styleClass="navigation-list" VBox.vgrow="ALWAYS" />
+            
+            <!-- Bottom sidebar section with help/support -->
+            <VBox styleClass="sidebar-footer">
+                <Button fx:id="helpButton" text="Help &amp; Support" styleClass="help-button" 
+                        onAction="#handleHelpSupport"/>
+            </VBox>
+        </VBox>
+    </left>
+    
+    <!-- Main Content Area -->
+    <center>
+        <StackPane>
+            <!-- Initial Patient Dashboard Content -->
+            <StackPane fx:id="contentArea" styleClass="content-area">
+                <ScrollPane fitToWidth="true">
+                    <VBox spacing="20">
+                        <Label text="Patient Dashboard" styleClass="section-title"/>
+                        <Label text="Welcome back, John" styleClass="section-subtitle" fx:id="welcomeLabel"/>
+                        
+                        <!-- Health Overview Cards -->
+                        <HBox spacing="20">
+                            <VBox styleClass="dashboard-card, primary, animated-hover" HBox.hgrow="ALWAYS">
+                                <HBox alignment="CENTER_LEFT" spacing="15">
+                                    <StackPane styleClass="card-icon">
+                                        <ImageView fitHeight="24" fitWidth="24" pickOnBounds="true" preserveRatio="true"/>
+                                    </StackPane>
+                                    <VBox>
+                                        <Label text="Next Appointment" styleClass="card-title"/>
+                                        <Label fx:id="nextAppointmentLabel" text="May 25, 2023" styleClass="card-value"/>
+                                        <Label fx:id="nextAppointmentTimeLabel" text="10:30 AM with Dr. Smith" styleClass="card-subtitle"/>
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+                            
+                            <VBox styleClass="dashboard-card, success, animated-hover" HBox.hgrow="ALWAYS">
+                                <HBox alignment="CENTER_LEFT" spacing="15">
+                                    <StackPane styleClass="card-icon">
+                                        <ImageView fitHeight="24" fitWidth="24" pickOnBounds="true" preserveRatio="true"/>
+                                    </StackPane>
+                                    <VBox>
+                                        <Label text="Prescription Refills" styleClass="card-title"/>
+                                        <Label fx:id="prescriptionRefillsLabel" text="2" styleClass="card-value"/>
+                                        <Label text="Due this month" styleClass="card-subtitle"/>
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+                            
+                            <VBox styleClass="dashboard-card, warning, animated-hover" HBox.hgrow="ALWAYS">
+                                <HBox alignment="CENTER_LEFT" spacing="15">
+                                    <StackPane styleClass="card-icon">
+                                        <ImageView fitHeight="24" fitWidth="24" pickOnBounds="true" preserveRatio="true"/>
+                                    </StackPane>
+                                    <VBox>
+                                        <Label text="Test Results" styleClass="card-title"/>
+                                        <Label fx:id="newTestResultsLabel" text="3" styleClass="card-value"/>
+                                        <Label text="New results available" styleClass="card-subtitle"/>
+                                    </VBox>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                        
+                        <!-- Quick Actions -->
+                        <Label text="Quick Actions" styleClass="section-title"/>
+                        <HBox spacing="15">
+                            <Button text="Schedule Appointment" styleClass="action-button" onAction="#handleScheduleAppointment"/>
+                            <Button text="Message Provider" styleClass="action-button" onAction="#handleMessageProvider"/>
+                            <Button text="Request Refill" styleClass="action-button" onAction="#handleRequestRefill"/>
+                            <Button text="View Medical Records" styleClass="action-button" onAction="#handleViewMedicalRecords"/>
+                        </HBox>
+                        
+                        <!-- Upcoming Appointments Section -->
+                        <Label text="Upcoming Appointments" styleClass="section-title"/>
+                        <VBox styleClass="dashboard-card">
+                            <TableView fx:id="appointmentsTable" prefHeight="200">
+                                <columns>
+                                    <TableColumn fx:id="appointmentDateColumn" text="Date" prefWidth="100"/>
+                                    <TableColumn fx:id="appointmentTimeColumn" text="Time" prefWidth="100"/>
+                                    <TableColumn fx:id="appointmentDoctorColumn" text="Doctor" prefWidth="200"/>
+                                    <TableColumn fx:id="appointmentPurposeColumn" text="Purpose" prefWidth="200"/>
+                                    <TableColumn fx:id="appointmentActionsColumn" text="Actions" prefWidth="150"/>
+                                </columns>
+                                <placeholder>
+                                    <Label text="No upcoming appointments" />
+                                </placeholder>
+                            </TableView>
+                        </VBox>
+                        
+                        <!-- Health Metrics -->
+                        <GridPane hgap="20" vgap="15">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="50"/>
+                                <ColumnConstraints percentWidth="50"/>
+                            </columnConstraints>
+                            
+                            <!-- Weight Trend -->
+                            <VBox GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="dashboard-card">
+                                <Label text="Weight Trend" styleClass="card-title"/>
+                                <LineChart fx:id="weightChart" title="" legendVisible="false" 
+                                          prefHeight="250">
+                                    <xAxis>
+                                        <CategoryAxis side="BOTTOM" />
+                                    </xAxis>
+                                    <yAxis>
+                                        <NumberAxis side="LEFT" />
+                                    </yAxis>
+                                </LineChart>
+                            </VBox>
+                            
+                            <!-- Blood Pressure Trend -->
+                            <VBox GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="dashboard-card">
+                                <Label text="Blood Pressure" styleClass="card-title"/>
+                                <LineChart fx:id="bpChart" title="" legendVisible="true" 
+                                          prefHeight="250">
+                                    <xAxis>
+                                        <CategoryAxis side="BOTTOM" />
+                                    </xAxis>
+                                    <yAxis>
+                                        <NumberAxis side="LEFT" />
+                                    </yAxis>
+                                </LineChart>
+                            </VBox>
+                        </GridPane>
+                        
+                        <!-- Medications Section -->
+                        <Label text="Current Medications" styleClass="section-title"/>
+                        <VBox styleClass="dashboard-card">
+                            <TableView fx:id="medicationsTable" prefHeight="200">
+                                <columns>
+                                    <TableColumn fx:id="medicationNameColumn" text="Medication" prefWidth="200"/>
+                                    <TableColumn fx:id="medicationDosageColumn" text="Dosage" prefWidth="150"/>
+                                    <TableColumn fx:id="medicationFrequencyColumn" text="Frequency" prefWidth="150"/>
+                                    <TableColumn fx:id="medicationStartColumn" text="Start Date" prefWidth="120"/>
+                                    <TableColumn fx:id="medicationRefillColumn" text="Refill By" prefWidth="120"/>
+                                </columns>
+                                <placeholder>
+                                    <Label text="No current medications" />
+                                </placeholder>
+                            </TableView>
+                        </VBox>
+                    </VBox>
+                </ScrollPane>
+            </StackPane>
+            
+            <!-- Loading overlay -->
+            <StackPane fx:id="loadingOverlay" styleClass="loading-overlay" visible="false" managed="false">
+                <VBox alignment="CENTER" spacing="20">
+                    <ProgressIndicator />
+                    <Label text="Loading..." styleClass="loading-text"/>
+                </VBox>
+            </StackPane>
+        </StackPane>
+    </center>
+</BorderPane> 

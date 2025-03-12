@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.geometry.Pos?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+
+<VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.org/fxml"
+      fx:controller="com.example.demo.controller.HomePageController"
+      alignment="CENTER" spacing="20" style="-fx-background-color: #f0f8ff;" stylesheets="@styles.css">
+
+    <!-- Header -->
+    <HBox alignment="CENTER" spacing="10" style="-fx-padding: 20;">
+        <ImageView fitHeight="64" fitWidth="64">
+            <Image url="@icons/img.png"/> <!-- Add your logo here -->
+        </ImageView>
+        <Label text="Healthcare Management System" styleClass="header-title"/>
+    </HBox>
+
+    <!-- Title -->
+    <Label text="Welcome to the Future of Healthcare" styleClass="home-title">
+        <font>
+            <Font name="Roboto" size="36"/>
+        </font>
+    </Label>
+
+    <!-- Subtitle -->
+    <Label text="Manage your health records, appointments, and more with ease." styleClass="home-subtitle"/>
+
+    <!-- Get Started Button -->
+    <Button fx:id="getStartedButton" text="Get Started" styleClass="home-button" onAction="#handleGetStartedButtonClick"/>
+
+</VBox>

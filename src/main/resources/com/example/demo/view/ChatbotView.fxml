@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.demo.controller.ChatController"
+            style="-fx-background-color: linear-gradient(to bottom right,rgb(35, 166, 202),rgb(8, 23, 120));
+                   -fx-font-family: 'Segoe UI', sans-serif;">
+
+    <!-- Top Header -->
+    <top>
+        <HBox spacing="15"
+              alignment="CENTER_LEFT"
+              style="-fx-padding: 15;
+                     -fx-background-color: rgba(0,0,0,0.2);
+                     -fx-background-radius: 0 0 12 12;
+                     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0, 0, 2);">
+            <Label text="Chat Screen"
+                   style="-fx-font-size: 26px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #FFFFFF;
+                          -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 3, 0, 1, 1);"/>
+        </HBox>
+    </top>
+
+    <!-- Center: Single Chat Panel -->
+    <center>
+        <VBox spacing="10"
+              style="-fx-padding: 20;">
+            <VBox spacing="10"
+                  style="-fx-background-color: rgba(255,255,255,0.15);
+                         -fx-background-radius: 12;
+                         -fx-border-color: #FFFFFF;
+                         -fx-border-radius: 12;
+                         -fx-border-width: 2;
+                         -fx-padding: 15;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 3);">
+
+                <Label text="Chat Messages"
+                       style="-fx-text-fill: #FFFFFF;
+                              -fx-font-size: 18px;
+                              -fx-font-weight: bold;
+                              -fx-padding: 0 0 8 0;"/>
+                
+                <!-- Single ListView for ALL messages (user + bot) -->
+                <ListView fx:id="chatList"
+          VBox.vgrow="ALWAYS"
+          style="
+            /* Glass-like gradient background */
+            -fx-background-color: linear-gradient(to bottom right, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+            -fx-background-radius: 12;
+            
+            /* Semi-transparent border to separate from background */
+            -fx-border-color: rgba(255,255,255,0.3);
+            -fx-border-radius: 12;
+            -fx-border-width: 2;
+            
+            /* Generous padding for content */
+            -fx-padding: 15;
+            
+            /* Text styling inside cells */
+            -fx-text-fill: #333333;
+            
+            /* Make cell backgrounds blend seamlessly */
+            -fx-control-inner-background: transparent;
+            
+            /* Optional: fix cell size for uniform spacing (adjust as needed) */
+            -fx-fixed-cell-size: 50;
+            
+            /* Subtle highlight when hovering over a cell (optional) */
+            -fx-cell-hover-color: rgba(255,255,255,0.1);
+            
+            /* Uncomment if you want a custom selection color
+               -fx-selection-bar: rgba(255,255,255,0.3);
+               -fx-selection-bar-border: rgba(255,255,255,0.3);
+            */
+          " />
+
+            </VBox>
+        </VBox>
+    </center>
+
+    <!-- Bottom: Input Area -->
+    <bottom>
+        <HBox spacing="10"
+              alignment="CENTER"
+              style="-fx-padding: 15;
+                     -fx-background-color: rgba(0,0,0,0.25);
+                     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 1);">
+            
+            <!-- Message Input (same fx:id) -->
+            <TextField fx:id="messageField"
+                       HBox.hgrow="ALWAYS"
+                       promptText="Type your message here..."
+                       style="-fx-background-color: rgba(255,255,255,0.9);
+                              -fx-background-radius: 20;
+                              -fx-border-color: #FFFFFF;
+                              -fx-border-radius: 20;
+                              -fx-padding: 10;
+                              -fx-text-fill: #333333;"/>
+            
+            <!-- Send Button (same event handler) -->
+            <Button text="Send"
+                    onAction="#handleSendMessage"
+                    style="-fx-background-color: #00BCD4;
+                           -fx-text-fill: #ffffff;
+                           -fx-font-weight: bold;
+                           -fx-background-radius: 20;
+                           -fx-padding: 10 25;
+                           -fx-cursor: hand;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

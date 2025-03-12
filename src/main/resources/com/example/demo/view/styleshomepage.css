@@ -1,0 +1,48 @@
+/* General Styles */
+.root {
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-background-color: #f0f8ff; /* Light blue background */
+}
+
+/* Header Styles */
+.header-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50; /* Dark blue text */
+}
+
+/* Title Styles */
+.home-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2980b9; /* Blue text */
+    -fx-effect: dropshadow(gaussian, rgba(11, 14, 173, 0.2), 10, 0.5, 0, 1); /* Subtle shadow */
+}
+
+/* Subtitle Styles */
+.home-subtitle {
+    -fx-font-size: 18px;
+    -fx-text-fill: #0b595f; /* Gray text */
+    -fx-padding: 10 0 20 0; /* Top and bottom padding */
+}
+
+/* Button Styles */
+.home-button {
+    -fx-background-color: #3498db; /* Blue background */
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 10, 0.5, 0, 1); /* Subtle shadow */
+    -fx-cursor: hand; /* Hand cursor on hover */
+}
+
+.home-button:hover {
+    -fx-background-color: #2980b9; /* Darker blue on hover */
+}
+
+.home-button:pressed {
+    -fx-background-color: #1c5980; /* Even darker blue on press */
+}

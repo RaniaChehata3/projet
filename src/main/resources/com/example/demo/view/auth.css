@@ -1,0 +1,309 @@
+/* Modern Authentication Styles for SahaCare
+ * This file provides styling for login and registration screens
+ */
+
+/* Modern Authentication Styles for SahaCare - Desktop Optimized */
+
+/* Color Variables */
+* {
+    -fx-primary: #0070e0;
+    -fx-primary-dark: #005bb8;
+    -fx-primary-light: #e6f2ff;
+    -fx-secondary: #42d9a1;
+    -fx-secondary-dark: #35b284;
+    -fx-grey-light: #f5f7fa;
+    -fx-grey: #e9ecef;
+    -fx-grey-dark: #343a40;
+    -fx-error: #d9534f;
+    -fx-warning: #f0ad4e;
+    -fx-success: #5cb85c;
+    -fx-text-dark: #212529;
+    -fx-text-medium: #495057;
+    -fx-text-light: #6c757d;
+    -fx-white: #ffffff;
+    -fx-shadow: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 6, 0, 0, 2);
+    -fx-input-shadow: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 2, 0, 0, 1);
+    -fx-highlight-shadow: dropshadow(gaussian, rgba(0, 112, 224, 0.15), 4, 0, 0, 1);
+}
+
+/* Root container styling */
+.auth-container {
+    -fx-background-color: #f5f7fa;
+}
+
+/* Scrollpane styling - more compact */
+.auth-scrollpane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+
+.auth-scrollpane .viewport {
+    -fx-background-color: transparent;
+}
+
+.auth-scrollpane .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 8;
+}
+
+/* Main card styling - smaller and more compact */
+.auth-card {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-padding: 20px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 6, 0, 0, 2);
+    -fx-alignment: center;
+    -fx-spacing: 10;
+    -fx-max-width: 400px;  /* Smaller card width */
+}
+
+/* Logo styling - smaller logo */
+.app-logo {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 3, 0, 0, 1);
+}
+
+/* Title styling - smaller font */
+.app-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-fill: #2D3748;
+}
+
+.app-subtitle {
+    -fx-font-size: 14px;
+    -fx-fill: #718096;
+    -fx-padding: 0 0 5 0;
+}
+
+/* Form styling - more compact */
+.auth-form {
+    -fx-spacing: 10;
+    -fx-padding: 5 0;
+    -fx-max-width: 350px;
+}
+
+.form-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #4A5568;
+    -fx-font-weight: bold;
+}
+
+.form-field {
+    -fx-background-color: #EDF2F7;
+    -fx-background-radius: 4px;
+    -fx-padding: 8px;
+    -fx-font-size: 12px;
+    -fx-pref-height: 32px;
+}
+
+.form-field:focused {
+    -fx-background-color: #E6EFFD;
+    -fx-border-color: #3182CE;
+    -fx-border-radius: 4px;
+    -fx-border-width: 1px;
+}
+
+/* Buttons styling - smaller and more compact */
+.auth-button {
+    -fx-background-color: #3182CE;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+    -fx-pref-height: 32px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 2, 0, 0, 1);
+}
+
+.auth-button:hover {
+    -fx-background-color: #2B6CB0;
+}
+
+.auth-button:pressed {
+    -fx-background-color: #2C5282;
+}
+
+/* Links styling - smaller font */
+.auth-link {
+    -fx-text-fill: #3182CE;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.auth-link:hover {
+    -fx-text-fill: #2B6CB0;
+    -fx-underline: true;
+}
+
+/* Error message styling - smaller and more compact */
+.error-label {
+    -fx-text-fill: #E53E3E;
+    -fx-font-size: 12px;
+    -fx-padding: 4px;
+    -fx-background-color: #FED7D7;
+    -fx-background-radius: 4px;
+    -fx-alignment: center;
+}
+
+/* Demo accounts section - smaller and more compact */
+.demo-section {
+    -fx-padding: 8px;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 4px;
+    -fx-background-color: #F7FAFC;
+    -fx-alignment: center;
+}
+
+.demo-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #4A5568;
+    -fx-padding: 0 0 3 0;
+}
+
+.demo-button {
+    -fx-background-color: #EDF2F7;
+    -fx-text-fill: #4A5568;
+    -fx-font-size: 11px;
+    -fx-padding: 4px 8px;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+
+.demo-button:hover {
+    -fx-background-color: #E2E8F0;
+}
+
+/* Footer styling - smaller and more compact */
+.auth-footer {
+    -fx-padding: 8px 0;
+    -fx-alignment: center;
+    -fx-max-height: 30px;
+    -fx-min-height: 30px;
+    -fx-pref-height: 30px;
+    -fx-background-color: transparent;
+}
+
+.footer-text {
+    -fx-fill: #718096;
+    -fx-font-size: 11px;
+}
+
+/* Loading spinner styling - smaller */
+.auth-spinner {
+    -fx-background-color: #3182CE;
+    -fx-min-width: 24px;
+    -fx-min-height: 24px;
+    -fx-max-width: 24px;
+    -fx-max-height: 24px;
+    -fx-background-radius: 12px;
+}
+
+.spinner-animate {
+    -fx-opacity: 0.7;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 6, 0, 0, 0);
+}
+
+/* ComboBox specific styling - smaller and more compact */
+.combo-box {
+    -fx-background-color: #EDF2F7;
+    -fx-background-radius: 4px;
+    -fx-font-size: 12px;
+    -fx-pref-height: 32px;
+}
+
+.combo-box:focused {
+    -fx-background-color: #E6EFFD;
+    -fx-border-color: #3182CE;
+    -fx-border-radius: 4px;
+    -fx-border-width: 1px;
+}
+
+.combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.combo-box .arrow {
+    -fx-background-color: #4A5568;
+}
+
+.combo-box .list-cell {
+    -fx-padding: 6 8;
+    -fx-text-fill: #2D3748;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #EDF2F7;
+    -fx-background-radius: 4px;
+    -fx-pref-height: 200px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 2);
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-padding: 6 8;
+    -fx-text-fill: #2D3748;
+    -fx-background-color: transparent;
+}
+
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #E2E8F0;
+}
+
+.combo-box-popup .list-view .list-cell:selected {
+    -fx-background-color: #3182CE;
+    -fx-text-fill: white;
+}
+
+/* Animations */
+.animated {
+    -fx-transition: all 0.2s ease;
+}
+
+/* Desktop responsive layout for full screen */
+.desktop-container {
+    -fx-min-width: 100%;
+    -fx-min-height: 100%;
+}
+
+/* Full-screen optimization classes */
+.fullscreen-grid {
+    -fx-hgap: 20px;
+    -fx-vgap: 20px;
+}
+
+.side-content {
+    -fx-padding: 20px;
+    -fx-spacing: 10px;
+}
+
+/* Responsive Design for smaller screens */
+/* These would be applied using JavaScript/controller code
+   since JavaFX CSS doesn't directly support media queries */
+.compact-form {
+    -fx-min-width: 280px;
+    -fx-max-width: 320px;
+    -fx-padding: 5px 0;
+}
+
+.compact-text {
+    -fx-font-size: 90%;
+}
+
+.feature-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-fill: #2D3748;
+}
+
+.feature-subtitle {
+    -fx-font-size: 12px;
+    -fx-fill: #718096;
+}
+
+.auth-link-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #718096;
+} 

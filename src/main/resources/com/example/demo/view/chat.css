@@ -1,0 +1,108 @@
+/* Top Header */
+.chat-header {
+    -fx-padding: 15;
+    -fx-background-color: linear-gradient(to right, #34495e, #2c3e50);
+    -fx-alignment: CENTER_LEFT;
+}
+
+.chat-logo {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0.5, 0, 0);
+}
+
+.chat-title {
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ecf0f1;
+}
+
+.header-buttons {
+    -fx-alignment: CENTER_RIGHT;
+}
+
+.header-button {
+    -fx-background-color: #2980b9;
+    -fx-text-fill: #ecf0f1;
+    -fx-background-radius: 10;
+    -fx-padding: 5 15;
+}
+
+/* Left Sidebar: Conversation List */
+.chat-sidebar {
+    -fx-padding: 15;
+    -fx-background-color: #2c3e50;
+}
+
+.sidebar-title {
+    -fx-font-size: 18px;
+    -fx-text-fill: #ecf0f1;
+    -fx-padding: 5;
+}
+
+.conversation-list {
+    -fx-background-color: #34495e;
+    -fx-border-color: transparent;
+    -fx-border-radius: 5;
+}
+
+/* Center Chat Area */
+.chat-center {
+    -fx-background-color: #bdc3c7;
+}
+
+.chat-container {
+    -fx-padding: 15;
+}
+
+.chat-list {
+    -fx-background-color: transparent;
+    -fx-border-color: #ecf0f1;
+    -fx-border-radius: 5;
+    -fx-padding: 10;
+}
+
+/* Right Sidebar: User Info Panel */
+.chat-info-panel {
+    -fx-padding: 15;
+    -fx-background-color: #ecf0f1;
+}
+
+.info-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.profile-picture {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0.5, 0, 0);
+}
+
+.info-name {
+    -fx-font-size: 16px;
+    -fx-text-fill: #2c3e50;
+}
+
+.logout-button {
+    -fx-background-color: #c0392b;
+    -fx-text-fill: #ecf0f1;
+    -fx-background-radius: 10;
+    -fx-padding: 5 15;
+}
+
+/* Bottom Input Area */
+.chat-input-container {
+    -fx-padding: 15;
+    -fx-background-color: #95a5a6;
+}
+
+.chat-input {
+    -fx-background-radius: 15;
+    -fx-padding: 10;
+    -fx-border-color: #ecf0f1;
+}
+
+.chat-send-button {
+    -fx-background-color: #27ae60;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 15;
+    -fx-padding: 10 20;
+}

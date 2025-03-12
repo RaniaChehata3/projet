@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.org/fxml"
+      fx:controller="com.example.demo.controller.PrescriptionsController"
+      spacing="20" styleClass="content-container">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+    
+    <Label text="Prescriptions" styleClass="section-title"/>
+    <Label text="Manage patient prescriptions and medication orders" styleClass="section-subtitle"/>
+    
+    <!-- Search and Filter Section -->
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <TextField fx:id="searchField" promptText="Search prescriptions..." prefWidth="300"/>
+        <ComboBox fx:id="filterComboBox" promptText="Filter by..." prefWidth="200"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="New Prescription" styleClass="action-button, primary" onAction="#handleNewPrescription"/>
+    </HBox>
+    
+    <!-- Prescriptions Table -->
+    <TableView fx:id="prescriptionsTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="idColumn" text="ID" prefWidth="80"/>
+            <TableColumn fx:id="dateColumn" text="Date" prefWidth="120"/>
+            <TableColumn fx:id="patientColumn" text="Patient" prefWidth="200"/>
+            <TableColumn fx:id="medicationColumn" text="Medication" prefWidth="200"/>
+            <TableColumn fx:id="dosageColumn" text="Dosage" prefWidth="150"/>
+            <TableColumn fx:id="frequencyColumn" text="Frequency" prefWidth="150"/>
+            <TableColumn fx:id="durationColumn" text="Duration" prefWidth="100"/>
+            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
+        </columns>
+        <placeholder>
+            <Label text="No prescriptions found" />
+        </placeholder>
+    </TableView>
+    
+    <!-- Bottom Information -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="Total Prescriptions:"/>
+        <Label fx:id="totalPrescriptionsLabel" text="0" styleClass="bold-text"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Pagination fx:id="prescriptionsPagination" pageCount="1" maxPageIndicatorCount="5" prefHeight="40"/>
+    </HBox>
+</VBox> 

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.collections.*?>
+<?import java.lang.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.org/fxml"
+            fx:controller="com.example.demo.controller.DashboardController"
+            styleClass="main-container"
+            stylesheets="@modern-dashboard.css">
+    
+    <!-- Top Navigation Bar -->
+    <top>
+        <HBox fx:id="topNav" styleClass="top-nav">
+            <ImageView fitHeight="32" fitWidth="32" styleClass="nav-logo">
+                <Image url="@icons/logo.png"/>
+            </ImageView>
+            
+            <Label text="SahaCare" styleClass="app-title"/>
+            
+            <Region HBox.hgrow="ALWAYS"/>
+            
+            <TextField promptText="Search patients, doctors, appointments..." styleClass="search-bar"/>
+            
+            <Button text="Notifications" styleClass="nav-button">
+                <graphic>
+                    <StackPane>
+                        <Circle radius="4" fill="#ff6b6b" translateX="6" translateY="-6"/>
+                    </StackPane>
+                </graphic>
+            </Button>
+            
+            <Button text="Profile" styleClass="nav-button"/>
+            
+            <Button text="Logout" styleClass="nav-button, primary" onAction="#handleLogout"/>
+        </HBox>
+    </top>
+    
+    <!-- Left Sidebar -->
+    <left>
+        <VBox fx:id="sidebar" styleClass="sidebar">
+            <VBox styleClass="sidebar-header">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <StackPane styleClass="profile-button">
+                        <Label text="DR" />
+                    </StackPane>
+                    <VBox spacing="2">
+                        <Label fx:id="userNameLabel" text="Dr. Smith" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="userRoleLabel" text="Cardiologist" style="-fx-font-size: 12px; -fx-text-fill: -fx-text-light;"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+            
+            <ListView fx:id="sidebarMenu" styleClass="menu-list" VBox.vgrow="ALWAYS"/>
+            
+            <VBox alignment="CENTER" spacing="10" style="-fx-padding: 20px;">
+                <Label text="Need Help?" style="-fx-font-weight: bold;"/>
+                <Button text="Contact Support" styleClass="nav-button, primary" maxWidth="Infinity"/>
+            </VBox>
+        </VBox>
+    </left>
+    
+    <!-- Main Content Area -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="content-scroll" hbarPolicy="NEVER">
+            <VBox fx:id="contentArea" styleClass="content-area">
+                <!-- Dashboard Header -->
+                <HBox alignment="CENTER_LEFT" spacing="20">
+                    <VBox>
+                        <Label text="Dashboard" styleClass="content-title"/>
+                        <Label text="Welcome back, Dr. Smith" styleClass="content-subtitle"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <ComboBox value="This Week" promptText="Select Period">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="Today"/>
+                                <String fx:value="This Week"/>
+                                <String fx:value="This Month"/>
+                                <String fx:value="This Year"/>
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+                </HBox>
+                
+                <!-- Stats Cards -->
+                <HBox spacing="20" alignment="CENTER_LEFT">
+                    <VBox styleClass="dashboard-card, primary, animated-hover" HBox.hgrow="ALWAYS">
+                        <Label text="Total Patients" styleClass="card-title"/>
+                        <Label text="1,284" styleClass="card-value"/>
+                    </VBox>
+                    
+                    <VBox styleClass="dashboard-card, animated-hover" HBox.hgrow="ALWAYS">
+                        <Label text="Appointments Today" styleClass="card-title"/>
+                        <Label text="24" styleClass="card-value"/>
+                    </VBox>
+                    
+                    <VBox styleClass="dashboard-card, animated-hover" HBox.hgrow="ALWAYS">
+                        <Label text="Pending Reports" styleClass="card-title"/>
+                        <Label text="7" styleClass="card-value"/>
+                    </VBox>
+                    
+                    <VBox styleClass="dashboard-card, secondary, animated-hover" HBox.hgrow="ALWAYS">
+                        <Label text="Lab Tests Ordered" styleClass="card-title"/>
+                        <Label text="32" styleClass="card-value"/>
+                    </VBox>
+                </HBox>
+                
+                <!-- Charts Row -->
+                <HBox spacing="20">
+                    <!-- Patient Activity Chart -->
+                    <VBox spacing="10" HBox.hgrow="ALWAYS">
+                        <LineChart fx:id="lineChart" title="Patient Activity" legendVisible="true">
+                            <xAxis>
+                                <CategoryAxis label="Day of Week" animated="false">
+                                    <categories>
+                                        <FXCollections fx:factory="observableArrayList">
+                                            <String fx:value="Mon"/>
+                                            <String fx:value="Tue"/>
+                                            <String fx:value="Wed"/>
+                                            <String fx:value="Thu"/>
+                                            <String fx:value="Fri"/>
+                                            <String fx:value="Sat"/>
+                                            <String fx:value="Sun"/>
+                                        </FXCollections>
+                                    </categories>
+                                </CategoryAxis>
+                            </xAxis>
+                            <yAxis>
+                                <NumberAxis label="Patients" animated="false"/>
+                            </yAxis>
+                        </LineChart>
+                    </VBox>
+                    
+                    <!-- Patient Demographics -->
+                    <VBox spacing="10" HBox.hgrow="ALWAYS">
+                        <PieChart fx:id="pieChart" title="Patient Demographics">
+                        </PieChart>
+                    </VBox>
+                </HBox>
+                
+                <!-- Recent Appointments -->
+                <VBox spacing="10">
+                    <Label text="Upcoming Appointments" styleClass="content-title" style="-fx-font-size: 18px;"/>
+                    
+                    <TableView fx:id="appointmentsTable" VBox.vgrow="ALWAYS" prefHeight="200">
+                        <columns>
+                            <TableColumn fx:id="patientColumn" text="Patient" prefWidth="150"/>
+                            <TableColumn fx:id="dateColumn" text="Date" prefWidth="100"/>
+                            <TableColumn fx:id="timeColumn" text="Time" prefWidth="100"/>
+                            <TableColumn fx:id="purposeColumn" text="Purpose" prefWidth="200"/>
+                            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+                </VBox>
+                
+                <!-- Info Cards -->
+                <HBox spacing="20">
+                    <!-- Recent Messages -->
+                    <VBox styleClass="dashboard-card" HBox.hgrow="ALWAYS" spacing="10">
+                        <Label text="Recent Messages" styleClass="card-title"/>
+                        
+                        <ListView prefHeight="150">
+                            <placeholder>
+                                <Label text="No new messages"/>
+                            </placeholder>
+                        </ListView>
+                    </VBox>
+                    
+                    <!-- Recent Notifications -->
+                    <VBox styleClass="dashboard-card" HBox.hgrow="ALWAYS" spacing="10">
+                        <Label text="Recent Notifications" styleClass="card-title"/>
+                        
+                        <ListView prefHeight="150">
+                            <placeholder>
+                                <Label text="No new notifications"/>
+                            </placeholder>
+                        </ListView>
+                    </VBox>
+                </HBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+    
+    <!-- Loading Overlay -->
+    <StackPane fx:id="loadingOverlay" styleClass="loading-overlay" visible="false" managed="false">
+        <StackPane styleClass="spinner" />
+    </StackPane>
+</BorderPane> 

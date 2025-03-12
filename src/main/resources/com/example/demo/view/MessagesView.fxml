@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.org/fxml"
+            fx:controller="com.example.demo.controller.MessagesController"
+            styleClass="content-container">
+    
+    <top>
+        <VBox spacing="10">
+            <padding>
+                <Insets top="20" right="20" bottom="10" left="20"/>
+            </padding>
+            <Label text="Messages" styleClass="section-title"/>
+            <Label text="Securely communicate with patients and colleagues" styleClass="section-subtitle"/>
+            
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="searchField" promptText="Search messages..." HBox.hgrow="ALWAYS"/>
+                <Button text="New Message" styleClass="action-button, primary" onAction="#handleNewMessage"/>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <center>
+        <SplitPane dividerPositions="0.3" styleClass="messages-split-pane">
+            <!-- Left side: Contacts/Conversations List -->
+            <VBox styleClass="conversations-list">
+                <ListView fx:id="conversationsList" VBox.vgrow="ALWAYS"/>
+            </VBox>
+            
+            <!-- Right side: Message Thread -->
+            <VBox styleClass="message-thread">
+                <BorderPane VBox.vgrow="ALWAYS">
+                    <!-- Conversation Header -->
+                    <top>
+                        <HBox styleClass="conversation-header" alignment="CENTER_LEFT" spacing="10">
+                            <padding>
+                                <Insets top="10" right="15" bottom="10" left="15"/>
+                            </padding>
+                            
+                            <StackPane styleClass="contact-avatar" prefWidth="40" prefHeight="40">
+                                <Label fx:id="contactInitialsLabel" text="JS"/>
+                            </StackPane>
+                            
+                            <VBox>
+                                <Label fx:id="contactNameLabel" text="John Smith" styleClass="contact-name"/>
+                                <Label fx:id="contactStatusLabel" text="Online" styleClass="contact-status"/>
+                            </VBox>
+                            
+                            <Region HBox.hgrow="ALWAYS"/>
+                            
+                            <Button text="Call" styleClass="action-button" onAction="#handleCall"/>
+                            <Button text="Video" styleClass="action-button" onAction="#handleVideo"/>
+                            <MenuButton text="More">
+                                <items>
+                                    <MenuItem text="View Profile" onAction="#handleViewProfile"/>
+                                    <MenuItem text="Archive Conversation" onAction="#handleArchive"/>
+                                    <MenuItem text="Block" onAction="#handleBlock"/>
+                                </items>
+                            </MenuButton>
+                        </HBox>
+                    </top>
+                    
+                    <!-- Message Content Area -->
+                    <center>
+                        <ScrollPane fitToWidth="true" styleClass="messages-scroll-pane">
+                            <VBox fx:id="messagesContainer" spacing="15" styleClass="messages-container">
+                                <padding>
+                                    <Insets top="15" right="15" bottom="15" left="15"/>
+                                </padding>
+                                
+                                <!-- This is just a placeholder - messages would be added dynamically -->
+                                <VBox styleClass="message-bubble, received-message">
+                                    <Label text="Hello, I have a question about my prescription." wrapText="true"/>
+                                    <Label text="10:25 AM" styleClass="message-time"/>
+                                </VBox>
+                                
+                                <VBox styleClass="message-bubble, sent-message">
+                                    <Label text="Hi John, I'm available now. What questions do you have?" wrapText="true"/>
+                                    <Label text="10:27 AM" styleClass="message-time"/>
+                                </VBox>
+                                
+                                <VBox styleClass="message-bubble, received-message">
+                                    <Label text="I'm not sure about the dosage. It says twice daily, but should I take it with food?" wrapText="true"/>
+                                    <Label text="10:28 AM" styleClass="message-time"/>
+                                </VBox>
+                            </VBox>
+                        </ScrollPane>
+                    </center>
+                    
+                    <!-- Message Input Area -->
+                    <bottom>
+                        <HBox styleClass="message-input-area" alignment="CENTER" spacing="10">
+                            <padding>
+                                <Insets top="10" right="15" bottom="10" left="15"/>
+                            </padding>
+                            
+                            <Button text="+" styleClass="attachment-button" onAction="#handleAttachment"/>
+                            <TextField fx:id="messageField" promptText="Type a message..." HBox.hgrow="ALWAYS"/>
+                            <Button text="Send" styleClass="send-button" onAction="#handleSend"/>
+                        </HBox>
+                    </bottom>
+                </BorderPane>
+            </VBox>
+        </SplitPane>
+    </center>
+</BorderPane> 

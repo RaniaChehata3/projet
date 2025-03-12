@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.org/fxml"
+      fx:controller="com.example.demo.controller.PlaceholderController"
+      spacing="20" styleClass="content-container" alignment="CENTER">
+    
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+    
+    <Label fx:id="titleLabel" text="Feature Coming Soon" styleClass="section-title"/>
+    <Label fx:id="subtitleLabel" text="This feature is under development and will be available soon." styleClass="section-subtitle"/>
+    
+    <VBox alignment="CENTER" spacing="20" styleClass="placeholder-content">
+        <padding>
+            <Insets top="50" right="50" bottom="50" left="50"/>
+        </padding>
+        
+        <Label text="🚧 Under Construction 🚧" styleClass="placeholder-icon"/>
+        <Label fx:id="descriptionLabel" text="We're working hard to bring you this feature. Stay tuned for updates!" styleClass="placeholder-description" wrapText="true" textAlignment="CENTER"/>
+        
+        <Button fx:id="actionButton" text="Go Back" styleClass="action-button, primary" onAction="#handleAction"/>
+    </VBox>
+</VBox> 

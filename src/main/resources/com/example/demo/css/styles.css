@@ -1,0 +1,233 @@
+/* Global Styles */
+.root {
+    -fx-font-family: 'Segoe UI', Arial, sans-serif;
+    -fx-font-size: 14px;
+    -fx-background-color: #f5f5f5;
+}
+
+/* Text Styles */
+.page-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.section-header {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #34495e;
+}
+
+.form-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.info-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #34495e;
+}
+
+/* Button Styles */
+.button {
+    -fx-background-radius: 4px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+}
+
+.button-primary {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.button-primary:hover {
+    -fx-background-color: #2980b9;
+}
+
+.button-secondary {
+    -fx-background-color: #95a5a6;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.button-secondary:hover {
+    -fx-background-color: #7f8c8d;
+}
+
+.button-danger {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.button-danger:hover {
+    -fx-background-color: #c0392b;
+}
+
+.button-success {
+    -fx-background-color: #27ae60;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.button-success:hover {
+    -fx-background-color: #2ecc71;
+}
+
+/* Table Styles */
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 4px;
+    -fx-border-color: #ddd;
+    -fx-border-radius: 4px;
+}
+
+.table-view .column-header {
+    -fx-background-color: #ecf0f1;
+    -fx-font-weight: bold;
+}
+
+.table-view .column-header-background .filler {
+    -fx-background-color: transparent;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #f9f9f9;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+}
+
+/* Tab Pane Styles */
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #ecf0f1;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #bdc3c7;
+    -fx-background-radius: 4px 4px 0 0;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: white;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #2c3e50;
+    -fx-font-weight: bold;
+}
+
+/* Form Styles */
+.text-field, .date-picker, .combo-box, .text-area {
+    -fx-background-color: white;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 4px;
+    -fx-padding: 5px;
+}
+
+.text-field:focused, .date-picker:focused, .combo-box:focused, .text-area:focused {
+    -fx-border-color: #3498db;
+}
+
+/* Text Area specific styles */
+.text-area {
+    -fx-font-size: 13px;
+}
+
+.text-area .content {
+    -fx-background-color: white;
+}
+
+/* Patient Info Panel */
+.patient-info-panel {
+    -fx-background-color: white;
+    -fx-background-radius: 4px;
+    -fx-border-color: #ddd;
+    -fx-border-radius: 4px;
+}
+
+/* Status Labels */
+.status-active {
+    -fx-text-fill: #27ae60;
+    -fx-font-weight: bold;
+}
+
+.status-inactive {
+    -fx-text-fill: #7f8c8d;
+    -fx-font-weight: bold;
+}
+
+.status-transferred {
+    -fx-text-fill: #f39c12;
+    -fx-font-weight: bold;
+}
+
+.status-deceased {
+    -fx-text-fill: #c0392b;
+    -fx-font-weight: bold;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    -fx-background-color: #2c3e50;
+    -fx-padding: 10px 0;
+}
+
+.sidebar-item {
+    -fx-padding: 10px 15px;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-cursor: hand;
+}
+
+.sidebar-item:hover {
+    -fx-background-color: #34495e;
+}
+
+.sidebar-item.active {
+    -fx-background-color: #3498db;
+}
+
+.sidebar-icon {
+    -fx-fill: white;
+}
+
+/* Search Box */
+.search-box {
+    -fx-background-color: white;
+    -fx-background-radius: 20px;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 20px;
+    -fx-padding: 5px 10px;
+}
+
+.search-box:focused {
+    -fx-border-color: #3498db;
+}
+
+/* Pagination */
+.pagination {
+    -fx-page-information-visible: false;
+}
+
+.pagination .pagination-control .button {
+    -fx-background-color: #ecf0f1;
+    -fx-text-fill: #2c3e50;
+}
+
+.pagination .pagination-control .button:hover {
+    -fx-background-color: #bdc3c7;
+}
+
+.pagination .pagination-control .page-number {
+    -fx-background-color: transparent;
+    -fx-text-fill: #2c3e50;
+}
+
+.pagination .pagination-control .page-number:selected {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+} 

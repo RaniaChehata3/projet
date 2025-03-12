@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.org/fxml"
+      fx:controller="com.example.demo.controller.PatientListController"
+      spacing="20" styleClass="content-container">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+    
+    <Label text="My Patients" styleClass="section-title"/>
+    <Label text="View and manage your patient list" styleClass="section-subtitle"/>
+    
+    <!-- Search and Filter Section -->
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <TextField fx:id="searchField" promptText="Search patients..." prefWidth="300"/>
+        <ComboBox fx:id="filterComboBox" promptText="Filter by..." prefWidth="200"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Add Patient" styleClass="action-button, primary" onAction="#handleAddPatient"/>
+    </HBox>
+    
+    <!-- Patients Table -->
+    <TableView fx:id="patientsTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="idColumn" text="Patient ID" prefWidth="100"/>
+            <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
+            <TableColumn fx:id="ageColumn" text="Age" prefWidth="80"/>
+            <TableColumn fx:id="genderColumn" text="Gender" prefWidth="100"/>
+            <TableColumn fx:id="contactColumn" text="Contact" prefWidth="150"/>
+            <TableColumn fx:id="lastVisitColumn" text="Last Visit" prefWidth="150"/>
+            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
+        </columns>
+        <placeholder>
+            <Label text="No patients found" />
+        </placeholder>
+    </TableView>
+    
+    <!-- Bottom Information -->
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="Total Patients:"/>
+        <Label fx:id="totalPatientsLabel" text="0" styleClass="bold-text"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Pagination fx:id="patientsPagination" pageCount="1" maxPageIndicatorCount="5" prefHeight="40"/>
+    </HBox>
+</VBox> 
