@@ -9,6 +9,7 @@ module com.example.demo {
 
     requires java.net.http; // For HttpClient, HttpRequest, etc.
     requires org.json;
+    requires jdk.httpserver; // For com.sun.net.httpserver
 
     requires org.controlsfx.controls;
     requires com.dlsc.formsfx;
@@ -27,6 +28,7 @@ module com.example.demo {
     opens com.example.demo.database to javafx.base;
     opens com.example.demo.auth to javafx.base;
     opens com.example.demo.utils to javafx.base;
+    opens com.example.demo.api to javafx.base;
 
     exports com.example.demo;
     exports com.example.demo.controller;
@@ -34,6 +36,8 @@ module com.example.demo {
     exports com.example.demo.utils;
     exports com.example.demo.database;
     exports com.example.demo.auth;
+    exports com.example.demo.api;
+    exports com.example.demo.util;
 
     opens com.example.demo to javafx.fxml;
 }

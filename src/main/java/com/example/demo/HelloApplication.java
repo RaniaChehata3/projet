@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.api.SimpleHttpServer;
 import com.example.demo.database.DatabaseConnection;
 import com.example.demo.auth.AuthService;
 import com.example.demo.model.User;
@@ -21,6 +22,7 @@ public class HelloApplication extends Application {
     
     private static Scene scene;
     private static Stage primaryStage;
+    private static SimpleHttpServer apiServer;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -45,6 +47,9 @@ public class HelloApplication extends Application {
                 if (dbConnection.hasExistingData()) {
                     testLoginWithExistingCredentials();
                 }
+                
+                // Start the API server
+                initializeApiServer();
             } else {
                 System.err.println("Failed to connect to the database. Please check your database configuration.");
                 // Show an error dialog to inform the user
@@ -107,8 +112,58 @@ public class HelloApplication extends Application {
         // Use the NavigationUtil to adjust stage size
         NavigationUtil.adjustStageToScreen(primaryStage);
         
+        // Register a shutdown hook to stop the API server when the application closes
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (apiServer != null) {
+                System.out.println("Shutting down API server...");
+                apiServer.stop();
+            }
+        }));
+        
+        // Handle application close event
+        stage.setOnCloseRequest(event -> {
+            if (apiServer != null) {
+                System.out.println("Stopping API server...");
+                apiServer.stop();
+            }
+        });
+        
         // Show the stage
         stage.show();
+    }
+    
+    /**
+     * Initialize the API server
+     */
+    private void initializeApiServer() {
+        try {
+            System.out.println("Starting API server...");
+            apiServer = new SimpleHttpServer(5000); // Use port 5000 for the API server
+            apiServer.start();
+            System.out.println("API server started successfully on port 5000");
+            
+            // Display an info alert to notify the user
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+                alert.setTitle("API Server");
+                alert.setHeaderText("API Server Started");
+                alert.setContentText("The API server has been started on port 5000.\n\n" +
+                                    "You can now generate web links for medical records instead of exporting PDFs.");
+                alert.show();
+            });
+        } catch (Exception e) {
+            System.err.println("Failed to start API server: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Display an error alert
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+                alert.setTitle("API Server Error");
+                alert.setHeaderText("Failed to start API server");
+                alert.setContentText("Error: " + e.getMessage() + "\n\nThe application will continue to run, but web link generation for medical records will not be available.");
+                alert.show();
+            });
+        }
     }
     
     /**

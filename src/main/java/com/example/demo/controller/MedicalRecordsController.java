@@ -1,51 +1,75 @@
 package com.example.demo.controller;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
+import com.example.demo.database.MedicalRecordDAO;
+import com.example.demo.database.PatientDAO;
+import com.example.demo.database.UserDAO;
+import com.example.demo.model.Patient;
+import com.example.demo.model.User;
+import com.example.demo.model.UserRole;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.scene.layout.StackPane;
-import javafx.stage.FileChooser;
-import javafx.util.Callback;
-import javafx.util.StringConverter;
-import java.io.File;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Predicate;
+import javafx.collections.transformation.SortedList;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.CheckBox;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.util.Callback;
+import javafx.util.StringConverter;
+
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
-import java.util.stream.Collectors;
-import javafx.application.Platform;
-import java.util.ArrayList;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.example.demo.util.RecordLinkApiClient;
+
+// Added imports
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import org.json.JSONObject;
+import java.awt.Desktop;
+import java.net.URI;
 
 /**
  * Enhanced controller for the Medical Records view
@@ -139,80 +163,169 @@ public class MedicalRecordsController {
     // Date formatter for consistent date formatting
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     
+    // Add DAO for database operations
+    private MedicalRecordDAO medicalRecordDAO = new MedicalRecordDAO();
+    private PatientDAO patientDAO = PatientDAO.getInstance();
+    private UserDAO userDAO = new UserDAO();
+    
+    // Observable lists for patients and doctors
+    private ObservableList<PatientItem> patientsList = FXCollections.observableArrayList();
+    private ObservableList<DoctorItem> doctorsList = FXCollections.observableArrayList();
+    
+    /**
+     * Verify database connection and display status
+     * Called during initialization
+     */
+    private void verifyDatabaseConnection() {
+        boolean isConnected = false;
+        try {
+            // Try to get a connection
+            java.sql.Connection conn = com.example.demo.database.DatabaseConnection.getConnection();
+            if (conn != null) {
+                isConnected = true;
+                conn.close();
+                System.out.println("Database connection successful");
+            }
+        } catch (Exception e) {
+            System.err.println("Database connection failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        // Create a final copy of the isConnected variable for use in the lambda
+        final boolean connectedStatus = isConnected;
+        
+        // Show database connection status in the UI (could be added to a status bar or label)
+        Platform.runLater(() -> {
+            String status = connectedStatus ? "Connected to database" : "Not connected to database - using sample data";
+            
+            // Display a notification toast or status message
+            if (!connectedStatus) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Database Connection");
+                alert.setHeaderText("Database Connection Status");
+                alert.setContentText("Could not connect to the database. Using sample data only.\n\nChanges will not be saved when you refresh the application.");
+                alert.getDialogPane().getStyleClass().add("custom-alert");
+                alert.show();
+            } else {
+                System.out.println("Connected to database successfully. Changes will be saved.");
+            }
+        });
+    }
+    
     /**
      * Initialize the controller
      */
     @FXML
     public void initialize() {
-        // Initialize the filter dropdowns
-        recordTypeFilter.setItems(FXCollections.observableArrayList(
-            "All Records", "Recent Records", "Lab Results", "Consultations", "Prescriptions", "Immunizations"
-        ));
-        recordTypeFilter.getSelectionModel().selectFirst();
+        // Verify database connection first
+        verifyDatabaseConnection();
         
-        statusFilter.setItems(FXCollections.observableArrayList(
-            "All Statuses", "Completed", "Pending", "Expired", "Cancelled"
-        ));
-        statusFilter.getSelectionModel().selectFirst();
-        
-        // Set up date picker with default value
-        dateFilter.setValue(null);
-        
-        // Set up main table columns
         setupTableColumns(recordsTable);
+        setupTableColumns(labResultsTable);
+        setupTableColumns(consultationsTable);
+        setupTableColumns(prescriptionsTable);
+        setupTableColumns(immunizationsTable);
+        
+        // Load patients and doctors for dropdowns
+        loadPatients();
+        loadDoctors();
+        
+        // Load records from database instead of sample data
+        loadRecordsFromDatabase();
+        
+        // Set up filtered records
+        filteredRecords = new FilteredList<>(allRecordsList, p -> true);
+        recordsTable.setItems(filteredRecords);
         
         // Set up type-specific tables
         setupTypeSpecificTables();
         
-        // Load sample data
-        loadSampleRecords();
+        // Add tooltips to table rows
+        addTableRowTooltips(recordsTable);
+        
+        // Set up search and filters
+        setupSearchAndFilters();
+        
+        // Set up pagination
+        recordsPagination.setPageCount(1);
+        recordsPagination.currentPageIndexProperty().addListener((obs, oldIndex, newIndex) -> {
+            // Handle pagination changes here if needed
+        });
         
         // Update stats dashboard
         updateStatsDashboard();
         
-        // Create filtered list
-        filteredRecords = new FilteredList<>(allRecordsList, p -> true);
-        
-        // Set up main table with data
-        recordsTable.setItems(filteredRecords);
-        
-        // Update total records count
-        updateTotalRecordsLabel();
-        
-        // Set up search functionality
-        setupSearchAndFilters();
-        
-        // Add listener for tab changes to update the appropriate table
-        recordsTabPane.getSelectionModel().selectedItemProperty().addListener(
-            (observable, oldValue, newValue) -> {
-                String tabText = newValue.getText();
-                if (tabText.equals("All Records")) {
-                    // Already showing all records
-                } else {
-                    // Apply type-specific filter
-                    String recordType = tabText;
-                    // Special handling for specific tabs
-                    if (tabText.equals("Lab Results")) {
-                        recordType = "Lab Results";
-                    } else if (tabText.equals("Consultations")) {
-                        recordType = "Consultation";
-                    } else if (tabText.equals("Prescriptions")) {
-                        recordType = "Prescription";
-                    } else if (tabText.equals("Immunizations")) {
-                        recordType = "Immunization";
+        // Show welcome dialog for first-time users (can be controlled by user preferences)
+        // For demo purposes, let's always show it
+        showWelcomeDialog();
+    }
+    
+    /**
+     * Load records from the database instead of generating sample data
+     */
+    private void loadRecordsFromDatabase() {
+        try {
+            // Get total count for pagination
+            int totalCount = medicalRecordDAO.getTotalRecordsCount();
+            
+            if (totalCount == 0) {
+                // If no records in database, load sample data
+                // But we should also save these sample records to the database
+                loadSampleRecords();
+                
+                // Save all sample records to the database (only the first time)
+                for (MedicalRecord record : allRecordsList) {
+                    try {
+                        com.example.demo.model.MedicalRecord dbRecord = medicalRecordDAO.convertToDbFormat(record);
+                        // Check if it already exists before creating
+                        if (!medicalRecordDAO.recordExists(dbRecord.getRecordId())) {
+                            medicalRecordDAO.createMedicalRecord(dbRecord);
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("Error saving sample record to database: " + ex.getMessage());
                     }
-                    
-                    final String finalRecordType = recordType;
-                    filteredRecords.setPredicate(record -> record.getType().equals(finalRecordType));
-                    updateTotalRecordsLabel();
+                }
+                
+                return;
+            }
+            
+            // Clear existing records
+            allRecordsList.clear();
+            for (Map.Entry<String, ObservableList<MedicalRecord>> entry : recordsByType.entrySet()) {
+                entry.getValue().clear();
+            }
+            
+            // Load records from database with pagination (first 100 records)
+            java.util.List<com.example.demo.model.MedicalRecord> dbRecords = 
+                medicalRecordDAO.getAllMedicalRecords(0, 100);
+            
+            System.out.println("Loaded " + dbRecords.size() + " records from database");
+            
+            // Convert to controller's MedicalRecord format
+            for (com.example.demo.model.MedicalRecord dbRecord : dbRecords) {
+                MedicalRecord controllerRecord = medicalRecordDAO.convertToControllerFormat(dbRecord);
+                allRecordsList.add(controllerRecord);
+                
+                // Also add to type-specific collections
+                String type = controllerRecord.getType();
+                if (recordsByType.containsKey(type)) {
+                    recordsByType.get(type).add(controllerRecord);
                 }
             }
-        );
-        
-        // Show welcome dialog for first-time users
-        // This would typically check a preferences/settings value
-        // For demo purposes, we'll just show it
-        Platform.runLater(this::showWelcomeDialog);
+            
+            // Update UI
+            totalRecordsLabel.setText(String.valueOf(totalCount));
+            
+        } catch (Exception e) {
+            System.err.println("Error loading records from database: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Fallback to sample data
+            loadSampleRecords();
+            
+            // We should try to save these sample records to the database
+            // but we won't do it here since there was already an error connecting to the database
+        }
     }
     
     /**
@@ -432,6 +545,7 @@ public class MedicalRecordsController {
                 private final Button viewButton = new Button("View");
                 private final Button editButton = new Button("Edit");
                 private final Button exportButton = new Button("Export");
+                private final Button deleteButton = new Button("Delete");
                 
                 {
                     viewButton.getStyleClass().addAll("record-action-button", "view");
@@ -451,6 +565,12 @@ public class MedicalRecordsController {
                         MedicalRecord record = getTableView().getItems().get(getIndex());
                         handleExportSingleRecord(record);
                     });
+                    
+                    deleteButton.getStyleClass().addAll("record-action-button", "delete");
+                    deleteButton.setOnAction(event -> {
+                        MedicalRecord record = getTableView().getItems().get(getIndex());
+                        handleDeleteRecord(record);
+                    });
                 }
                 
                 @Override
@@ -462,7 +582,7 @@ public class MedicalRecordsController {
                         // Create an HBox to hold the buttons
                         javafx.scene.layout.HBox hbox = new javafx.scene.layout.HBox(8);
                         hbox.setAlignment(Pos.CENTER);
-                        hbox.getChildren().addAll(viewButton, editButton, exportButton);
+                        hbox.getChildren().addAll(viewButton, editButton, exportButton, deleteButton);
                         setGraphic(hbox);
                     }
                 }
@@ -582,6 +702,12 @@ public class MedicalRecordsController {
      * Load sample medical records data
      */
     private void loadSampleRecords() {
+        // Clear any existing data
+        allRecordsList.clear();
+        for (Map.Entry<String, ObservableList<MedicalRecord>> entry : recordsByType.entrySet()) {
+            entry.getValue().clear();
+        }
+        
         // Create sample records - using more recent dates and more detailed information
         MedicalRecord[] records = {
             new MedicalRecord(
@@ -593,7 +719,10 @@ public class MedicalRecordsController {
                 "Pending", 
                 "Initial consultation for persistent headaches and fatigue",
                 "R51 (Headache), G93.3 (Chronic fatigue)",
-                "blood_test_requisition.pdf"),
+                "blood_test_requisition.pdf",
+                "Severe headaches daily for 2 weeks with fatigue",
+                "Possible chronic fatigue syndrome, further tests needed",
+                "Rest, hydration, return for blood tests in 1 week"),
                 
             new MedicalRecord(
                 "MR-10002", 
@@ -604,7 +733,10 @@ public class MedicalRecordsController {
                 "Completed", 
                 "Complete blood count and metabolic panel review",
                 "Z00.00 (General adult medical exam)",
-                "cbc_results.pdf, metabolic_panel.pdf"),
+                "cbc_results.pdf, metabolic_panel.pdf",
+                "Annual blood work screening",
+                "All values within normal range",
+                "Continue current health regimen, annual follow-up"),
                 
             new MedicalRecord(
                 "MR-10003", 
@@ -615,7 +747,10 @@ public class MedicalRecordsController {
                 "Completed", 
                 "Prescription renewal for hypertension medication",
                 "I10 (Essential hypertension)",
-                "prescription_form.pdf"),
+                "prescription_form.pdf",
+                "Continuing management of hypertension",
+                "Essential hypertension, well-controlled on current medication",
+                "Lisinopril 10mg daily, refill for 90 days"),
                 
             new MedicalRecord(
                 "MR-10004", 
@@ -626,7 +761,10 @@ public class MedicalRecordsController {
                 "Completed", 
                 "Seasonal flu vaccination",
                 "Z23 (Encounter for immunization)",
-                "immunization_record.pdf"),
+                "immunization_record.pdf",
+                "Annual flu vaccine",
+                "Preventive care, no contraindications",
+                "Administered quadrivalent flu vaccine, lot #FL29384"),
                 
             new MedicalRecord(
                 "MR-10005", 
@@ -637,7 +775,10 @@ public class MedicalRecordsController {
                 "Completed", 
                 "Follow-up appointment for diabetes management",
                 "E11.9 (Type 2 diabetes mellitus without complications)",
-                "diabetes_management_plan.pdf"),
+                "diabetes_management_plan.pdf",
+                "3-month diabetes follow-up, reports improved energy",
+                "Type 2 diabetes, improved A1C from 7.8 to 6.9",
+                "Continue Metformin 500mg twice daily, dietary counseling scheduled"),
                 
             new MedicalRecord(
                 "MR-10006", 
@@ -648,7 +789,10 @@ public class MedicalRecordsController {
                 "Pending", 
                 "Lipid panel and A1C test results pending",
                 "E78.5 (Hyperlipidemia, unspecified)",
-                "test_order.pdf"),
+                "test_order.pdf",
+                "Routine monitoring of hyperlipidemia and prediabetes",
+                "Awaiting lab results",
+                "Continue current medications, results review in 1 week"),
                 
             new MedicalRecord(
                 "MR-10007", 
@@ -659,7 +803,10 @@ public class MedicalRecordsController {
                 "Expired", 
                 "Antibiotic prescription for respiratory infection",
                 "J06.9 (Acute upper respiratory infection)",
-                "antibiotic_prescription.pdf"),
+                "antibiotic_prescription.pdf",
+                "Cough, sore throat, mild fever for 5 days",
+                "Acute bronchitis, likely viral but cannot rule out bacterial infection",
+                "Amoxicillin 500mg three times daily for 7 days"),
                 
             new MedicalRecord(
                 "MR-10008", 
@@ -670,7 +817,10 @@ public class MedicalRecordsController {
                 "Completed", 
                 "Annual physical examination",
                 "Z00.00 (General adult medical exam)",
-                "exam_results.pdf"),
+                "exam_results.pdf",
+                "Annual wellness check, no specific concerns",
+                "Overall good health, mild vitamin D deficiency noted",
+                "Vitamin D supplement 2000 IU daily, continue exercise program"),
                 
             new MedicalRecord(
                 "MR-10009", 
@@ -681,7 +831,10 @@ public class MedicalRecordsController {
                 "Pending", 
                 "Thyroid function test results awaiting analysis",
                 "E03.9 (Hypothyroidism, unspecified)",
-                ""),
+                "",
+                "Follow-up for known hypothyroidism, reports fatigue despite medication",
+                "Awaiting TSH and T4 results to adjust medication",
+                "Continue current levothyroxine dose until results review"),
                 
             new MedicalRecord(
                 "MR-10010", 
@@ -692,7 +845,10 @@ public class MedicalRecordsController {
                 "Completed", 
                 "COVID-19 booster vaccination",
                 "Z23 (Encounter for immunization)",
-                "covid_vaccination_record.pdf")
+                "covid_vaccination_record.pdf",
+                "COVID-19 booster administration",
+                "Eligible for booster per current guidelines",
+                "Administered Pfizer-BioNTech booster, lot #PB478921")
         };
         
         // Add records to the main list
@@ -742,380 +898,19 @@ public class MedicalRecordsController {
      * Handle exporting a single medical record
      */
     private void handleExportSingleRecord(MedicalRecord record) {
-        showSingleRecordExportDialog(record);
+        // Use the new exportRecord method that includes web link functionality
+        exportRecord(record);
     }
     
     /**
      * Show a dialog for exporting a single record
+     * @deprecated Use the exportRecord method instead
      */
+    @Deprecated
     private void showSingleRecordExportDialog(MedicalRecord record) {
-        // Create a dialog
-        Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.setTitle("Export Medical Record");
-        dialog.setMinWidth(450);
-        dialog.setMinHeight(400);
-        
-        // Create layout
-        BorderPane root = new BorderPane();
-        root.setPadding(new Insets(25));
-        root.getStyleClass().add("custom-dialog");
-        
-        // Create title
-        Label titleLabel = new Label("Export Medical Record: " + record.getId());
-        titleLabel.getStyleClass().add("export-dialog-title");
-        
-        // Create patient info
-        Label patientLabel = new Label("Patient: " + record.getPatient());
-        patientLabel.getStyleClass().add("form-field-label");
-        
-        Label dateLabel = new Label("Date: " + record.getDate());
-        dateLabel.getStyleClass().add("form-field-label");
-        
-        Label typeLabel = new Label("Type: " + record.getType());
-        typeLabel.getStyleClass().add("form-field-label");
-        
-        VBox recordInfoBox = new VBox(5, patientLabel, dateLabel, typeLabel);
-        recordInfoBox.setPadding(new Insets(0, 0, 15, 0));
-        
-        // Create content grid
-        GridPane content = new GridPane();
-        content.setVgap(15);
-        content.setHgap(15);
-        
-        // Format section title
-        Label formatLabel = new Label("Export Format");
-        formatLabel.getStyleClass().add("export-section-title");
-        
-        // Format options
-        ToggleGroup formatGroup = new ToggleGroup();
-        RadioButton csvOption = new RadioButton("CSV Format (.csv)");
-        csvOption.setToggleGroup(formatGroup);
-        csvOption.setSelected(true);
-        
-        RadioButton pdfOption = new RadioButton("PDF Format (.pdf)");
-        pdfOption.setToggleGroup(formatGroup);
-        
-        // Add description for PDF format
-        Label pdfDescriptionLabel = new Label("PDF exports include a detailed clinical report with follow-up recommendations");
-        pdfDescriptionLabel.getStyleClass().add("form-field-label");
-        pdfDescriptionLabel.setWrapText(true);
-        pdfDescriptionLabel.setStyle("-fx-font-style: italic; -fx-text-fill: -fx-text-light; -fx-font-size: 11px;");
-        
-        VBox formatBox = new VBox(10, csvOption, pdfOption, pdfDescriptionLabel);
-        formatBox.getStyleClass().add("export-section");
-        
-        // Options section title
-        Label optionsLabel = new Label("Export Options");
-        optionsLabel.getStyleClass().add("export-section-title");
-        
-        // Export options
-        CheckBox includeHeadersOption = new CheckBox("Include column headers");
-        includeHeadersOption.setSelected(true);
-        
-        CheckBox includeMetadataOption = new CheckBox("Include report metadata");
-        includeMetadataOption.setSelected(true);
-        
-        CheckBox includeNotesOption = new CheckBox("Include notes and attachments");
-        includeNotesOption.setSelected(true);
-        
-        VBox optionsBox = new VBox(10, includeHeadersOption, includeMetadataOption, includeNotesOption);
-        optionsBox.getStyleClass().add("export-section");
-        
-        // Update UI based on format selection
-        formatGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
-            boolean isPdf = (newVal == pdfOption);
-            includeHeadersOption.setDisable(isPdf); // Headers always included in detailed PDF
-            if (isPdf) {
-                includeHeadersOption.setSelected(true);
-            }
-        });
-        
-        // Add to content
-        int row = 0;
-        content.add(formatLabel, 0, row++, 2, 1);
-        content.add(formatBox, 0, row++, 2, 1);
-        
-        Separator separator1 = new Separator();
-        content.add(separator1, 0, row++, 2, 1);
-        
-        content.add(optionsLabel, 0, row++, 2, 1);
-        content.add(optionsBox, 0, row++, 2, 1);
-        
-        // Create buttons
-        Button exportButton = new Button("Export");
-        exportButton.getStyleClass().addAll("action-button", "primary");
-        exportButton.setPrefWidth(100);
-        
-        Button previewButton = new Button("Preview");
-        previewButton.getStyleClass().add("action-button");
-        previewButton.setPrefWidth(100);
-        
-        Button cancelButton = new Button("Cancel");
-        cancelButton.getStyleClass().add("action-button");
-        cancelButton.setPrefWidth(100);
-        
-        HBox buttons = new HBox(10, cancelButton, previewButton, exportButton);
-        buttons.setAlignment(Pos.CENTER_RIGHT);
-        buttons.setPadding(new Insets(20, 0, 0, 0));
-        
-        // Handle button actions
-        cancelButton.setOnAction(e -> dialog.close());
-        
-        previewButton.setOnAction(e -> {
-            // Get selected options
-            boolean isCsvFormat = csvOption.isSelected();
-            boolean includeHeaders = includeHeadersOption.isSelected();
-            boolean includeMetadata = includeMetadataOption.isSelected();
-            boolean includeNotes = includeNotesOption.isSelected();
-            
-            // Create a list with just this record
-            List<MedicalRecord> recordList = new ArrayList<>();
-            recordList.add(record);
-            
-            // Show preview dialog
-            showPreviewDialog(recordList, isCsvFormat, includeHeaders, includeMetadata, includeNotes);
-        });
-        
-        exportButton.setOnAction(e -> {
-            // Get selected options
-            boolean isCsvFormat = csvOption.isSelected();
-            boolean includeHeaders = includeHeadersOption.isSelected();
-            boolean includeMetadata = includeMetadataOption.isSelected();
-            boolean includeNotes = includeNotesOption.isSelected();
-            
-            // Build export filename suggestion and filter
-            String fileExtension = isCsvFormat ? "csv" : "pdf";
-            String formatDescription = isCsvFormat ? "CSV Files" : "PDF Files";
-            String safeFileName = record.getId().replaceAll("[^a-zA-Z0-9\\-_]", "_");
-            
-            // Configure file chooser
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Save " + formatDescription.replace(" Files", ""));
-            fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter(formatDescription, "*." + fileExtension)
-            );
-            fileChooser.setInitialFileName(safeFileName + "_medical_record." + fileExtension);
-            
-            // Show save dialog
-            File file = fileChooser.showSaveDialog(dialog.getOwner());
-            
-            if (file != null) {
-                // Create a list with just this record
-                List<MedicalRecord> recordList = new ArrayList<>();
-                recordList.add(record);
-                
-                // Export the record
-                boolean success = false;
-                if (isCsvFormat) {
-                    success = exportToCsv(file, recordList, includeHeaders, includeMetadata, includeNotes);
-                } else {
-                    success = exportDetailedRecordToPdf(file, record, includeMetadata, includeNotes);
-                    
-                    // Show informational dialog specific to detailed PDF exports
-                    if (success) {
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                            alert.setTitle("Detailed PDF Export");
-                            alert.setHeaderText("Detailed Medical Record Report");
-                            alert.setContentText("A comprehensive clinical report has been generated in text-based PDF format. " +
-                                              "The report includes patient information, medical details, and follow-up recommendations specific to the record type.\n\n" +
-                                              "In a production environment, a proper PDF library would be used to create a better formatted document.");
-                            alert.getDialogPane().getStyleClass().add("custom-alert");
-                            alert.showAndWait();
-                        });
-                    }
-                }
-                
-                // Close the dialog
-                dialog.close();
-                
-                // Show success or error message
-                if (success) {
-                    showSuccessAlert("Export Successful", "Medical record exported successfully to: " + file.getAbsolutePath());
-                } else {
-                    showErrorAlert("Export Failed", "Failed to export medical record. Please try again.");
-                }
-            }
-        });
-        
-        // Assemble layout
-        VBox topSection = new VBox(5, titleLabel, recordInfoBox);
-        topSection.setPadding(new Insets(0, 0, 10, 0));
-        root.setTop(topSection);
-        root.setCenter(content);
-        root.setBottom(buttons);
-        
-        // Set scene and show dialog
-        Scene scene = new Scene(root);
-        
-        // Apply stylesheets from the main application
-        scene.getStylesheets().addAll(recordsTable.getScene().getStylesheets());
-        
-        dialog.setScene(scene);
-        dialog.showAndWait();
-    }
-    
-    /**
-     * Show a preview dialog of the records to be exported
-     */
-    private void showPreviewDialog(List<MedicalRecord> records, boolean isCsvFormat, 
-                                  boolean includeHeaders, boolean includeMetadata, boolean includeNotes) {
-        // Create a dialog
-        Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        dialog.setTitle("Export Preview");
-        dialog.setMinWidth(700);
-        dialog.setMinHeight(500);
-        
-        // Create layout
-        BorderPane root = new BorderPane();
-        root.setPadding(new Insets(25));
-        root.getStyleClass().add("custom-dialog");
-        
-        // Create title
-        Label titleLabel = new Label("Export Preview");
-        titleLabel.getStyleClass().add("export-dialog-title");
-        
-        // Create format label
-        Label formatLabel = new Label(String.format(
-            "Preview of %d records in %s format", 
-            records.size(), 
-            isCsvFormat ? "CSV" : "PDF"
-        ));
-        formatLabel.getStyleClass().add("form-field-label");
-        
-        VBox headerBox = new VBox(5, titleLabel, formatLabel);
-        headerBox.setPadding(new Insets(0, 0, 15, 0));
-        
-        // Create preview area
-        TextArea previewArea = new TextArea();
-        previewArea.setEditable(false);
-        previewArea.setWrapText(false);
-        previewArea.setPrefRowCount(20);
-        previewArea.getStyleClass().add("export-preview");
-        
-        // Generate preview content
-        StringBuilder previewContent = new StringBuilder();
-        
-        if (includeMetadata) {
-            // Add report metadata
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String timestamp = dateFormat.format(new Date());
-            
-            previewContent.append("Export Date: ").append(timestamp).append("\n");
-            previewContent.append("Total Records: ").append(records.size()).append("\n");
-            previewContent.append("Format: ").append(isCsvFormat ? "CSV" : "PDF").append("\n");
-            previewContent.append("\n");
-        }
-        
-        if (isCsvFormat) {
-            // CSV Format
-            if (includeHeaders) {
-                previewContent.append("ID,Date,Patient,Type,Doctor,Status");
-                if (includeNotes) {
-                    previewContent.append(",Notes,Attachments");
-                }
-                previewContent.append("\n");
-            }
-            
-            // Add records
-            for (MedicalRecord record : records) {
-                previewContent.append(record.getId()).append(",");
-                previewContent.append(record.getDate()).append(",");
-                previewContent.append("\"").append(record.getPatient()).append("\",");
-                previewContent.append("\"").append(record.getType()).append("\",");
-                previewContent.append("\"").append(record.getDoctor()).append("\",");
-                previewContent.append("\"").append(record.getStatus()).append("\"");
-                
-                if (includeNotes) {
-                    previewContent.append(",\"").append(record.getNotes().replace("\"", "\"\"")).append("\",");
-                    previewContent.append("\"").append(String.join("; ", record.getAttachments())).append("\"");
-                }
-                
-                previewContent.append("\n");
-            }
-        } else {
-            // PDF Format (simulated as text)
-            previewContent.append("==================================\n");
-            previewContent.append("       MEDICAL RECORDS REPORT      \n");
-            previewContent.append("==================================\n\n");
-            
-            if (includeHeaders) {
-                previewContent.append(String.format("%-6s %-12s %-20s %-15s %-20s %-10s\n", 
-                    "ID", "Date", "Patient", "Type", "Doctor", "Status"));
-                previewContent.append("----------------------------------------------------------------------\n");
-            }
-            
-            // Add records
-            for (MedicalRecord record : records) {
-                previewContent.append(String.format("%-6s %-12s %-20s %-15s %-20s %-10s\n", 
-                    record.getId(), 
-                    record.getDate(), 
-                    record.getPatient(), 
-                    record.getType(), 
-                    record.getDoctor(), 
-                    record.getStatus()
-                ));
-                
-                if (includeNotes) {
-                    previewContent.append("\nNotes: ").append(record.getNotes()).append("\n");
-                    
-                    if (!record.getAttachments().isEmpty()) {
-                        previewContent.append("Attachments: ").append(String.join(", ", record.getAttachments())).append("\n");
-                    }
-                    
-                    previewContent.append("----------------------------------------------------------------------\n");
-                }
-            }
-        }
-        
-        previewArea.setText(previewContent.toString());
-        
-        // Create close button
-        Button closeButton = new Button("Close");
-        closeButton.getStyleClass().add("action-button");
-        closeButton.setPrefWidth(100);
-        closeButton.setOnAction(e -> dialog.close());
-        
-        HBox buttons = new HBox(closeButton);
-        buttons.setAlignment(Pos.CENTER_RIGHT);
-        buttons.setPadding(new Insets(15, 0, 0, 0));
-        
-        // Assemble layout
-        root.setTop(headerBox);
-        root.setCenter(previewArea);
-        root.setBottom(buttons);
-        
-        // Set scene and show dialog
-        Scene scene = new Scene(root);
-        scene.getStylesheets().addAll(recordsTable.getScene().getStylesheets());
-        dialog.setScene(scene);
-        dialog.showAndWait();
-    }
-    
-    /**
-     * Show an error alert
-     */
-    private void showErrorAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.getDialogPane().getStyleClass().add("custom-alert");
-        alert.showAndWait();
-    }
-    
-    /**
-     * Show a success alert
-     */
-    private void showSuccessAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.getDialogPane().getStyleClass().add("custom-alert");
-        alert.showAndWait();
+        // This method is kept for compatibility but is no longer used
+        // All functionality is now in the exportRecord method
+        exportRecord(record);
     }
     
     /**
@@ -1154,10 +949,67 @@ public class MedicalRecordsController {
             recordIdLabel.setStyle("-fx-font-weight: bold;");
         }
         
-        TextField patientField = new TextField();
-        patientField.setPrefWidth(400);
-        patientField.setPromptText("Enter patient name");
-        patientField.getStyleClass().add("form-field");
+        // Replace patient text field with ComboBox
+        ComboBox<PatientItem> patientComboBox = new ComboBox<>(patientsList);
+        patientComboBox.setPrefWidth(400);
+        patientComboBox.setPromptText("Type to search and select patient");
+        patientComboBox.setEditable(true);
+        patientComboBox.getStyleClass().add("form-field");
+        
+        // Create filtered list for patient search
+        FilteredList<PatientItem> filteredPatients = new FilteredList<>(patientsList, p -> true);
+        patientComboBox.setItems(filteredPatients);
+        
+        // Add search functionality directly to the ComboBox
+        patientComboBox.getEditor().textProperty().addListener((observable, oldValue, newValue) -> {
+            final TextField editor = patientComboBox.getEditor();
+            final String selected = patientComboBox.getSelectionModel().getSelectedItem() != null ? 
+                    patientComboBox.getSelectionModel().getSelectedItem().toString() : "";
+            
+            // If the user has typed something but not selected, filter the list
+            if (editor.getText() != null && !editor.getText().equals(selected)) {
+                filteredPatients.setPredicate(item -> {
+                    // If search field is empty, show all patients
+                    if (newValue == null || newValue.isEmpty()) {
+                        return true;
+                    }
+                    
+                    // Compare patient name with search text (case insensitive)
+                    String lowerCaseFilter = newValue.toLowerCase();
+                    return item.getName().toLowerCase().contains(lowerCaseFilter);
+                });
+                patientComboBox.show(); // Show dropdown with filtered results
+            }
+        });
+        
+        // Configure ComboBox to use string converter for display
+        patientComboBox.setConverter(new StringConverter<PatientItem>() {
+            @Override
+            public String toString(PatientItem patient) {
+                if (patient == null) {
+                    return "";
+                }
+                return patient.getName();
+            }
+            
+            @Override
+            public PatientItem fromString(String string) {
+                // This is called when user types in the ComboBox
+                // Return the first matching patient or null
+                if (string == null || string.trim().isEmpty()) {
+                    return null;
+                }
+                
+                // Find first matching patient
+                String lowerCaseString = string.toLowerCase();
+                for (PatientItem patient : patientsList) {
+                    if (patient.getName().toLowerCase().contains(lowerCaseString)) {
+                        return patient;
+                    }
+                }
+                return null;
+            }
+        });
         
         ComboBox<String> typeComboBox = new ComboBox<>();
         typeComboBox.setItems(FXCollections.observableArrayList(
@@ -1171,10 +1023,67 @@ public class MedicalRecordsController {
         datePicker.setValue(LocalDate.now());
         datePicker.getStyleClass().add("form-field");
         
-        TextField doctorField = new TextField();
-        doctorField.setPrefWidth(400);
-        doctorField.setPromptText("Enter doctor's name");
-        doctorField.getStyleClass().add("form-field");
+        // Replace doctor text field with ComboBox
+        ComboBox<DoctorItem> doctorComboBox = new ComboBox<>(doctorsList);
+        doctorComboBox.setPrefWidth(400);
+        doctorComboBox.setPromptText("Type to search and select doctor");
+        doctorComboBox.setEditable(true);
+        doctorComboBox.getStyleClass().add("form-field");
+        
+        // Create filtered list for doctor search
+        FilteredList<DoctorItem> filteredDoctors = new FilteredList<>(doctorsList, p -> true);
+        doctorComboBox.setItems(filteredDoctors);
+        
+        // Add search functionality directly to the ComboBox
+        doctorComboBox.getEditor().textProperty().addListener((observable, oldValue, newValue) -> {
+            final TextField editor = doctorComboBox.getEditor();
+            final String selected = doctorComboBox.getSelectionModel().getSelectedItem() != null ? 
+                    doctorComboBox.getSelectionModel().getSelectedItem().toString() : "";
+            
+            // If the user has typed something but not selected, filter the list
+            if (editor.getText() != null && !editor.getText().equals(selected)) {
+                filteredDoctors.setPredicate(item -> {
+                    // If search field is empty, show all doctors
+                    if (newValue == null || newValue.isEmpty()) {
+                        return true;
+                    }
+                    
+                    // Compare doctor name with search text (case insensitive)
+                    String lowerCaseFilter = newValue.toLowerCase();
+                    return item.getName().toLowerCase().contains(lowerCaseFilter);
+                });
+                doctorComboBox.show(); // Show dropdown with filtered results
+            }
+        });
+        
+        // Configure ComboBox to use string converter for display
+        doctorComboBox.setConverter(new StringConverter<DoctorItem>() {
+            @Override
+            public String toString(DoctorItem doctor) {
+                if (doctor == null) {
+                    return "";
+                }
+                return doctor.getName();
+            }
+            
+            @Override
+            public DoctorItem fromString(String string) {
+                // This is called when user types in the ComboBox
+                // Return the first matching doctor or null
+                if (string == null || string.trim().isEmpty()) {
+                    return null;
+                }
+                
+                // Find first matching doctor
+                String lowerCaseString = string.toLowerCase();
+                for (DoctorItem doctor : doctorsList) {
+                    if (doctor.getName().toLowerCase().contains(lowerCaseString)) {
+                        return doctor;
+                    }
+                }
+                return null;
+            }
+        });
         
         ComboBox<String> statusComboBox = new ComboBox<>();
         statusComboBox.setItems(FXCollections.observableArrayList(
@@ -1205,7 +1114,7 @@ public class MedicalRecordsController {
         basicGrid.add(recordIdLabel, 1, row++);
         
         basicGrid.add(patientLabel, 0, row);
-        basicGrid.add(patientField, 1, row++);
+        basicGrid.add(patientComboBox, 1, row++);
         
         basicGrid.add(typeLabel, 0, row);
         basicGrid.add(typeComboBox, 1, row++);
@@ -1214,301 +1123,341 @@ public class MedicalRecordsController {
         basicGrid.add(datePicker, 1, row++);
         
         basicGrid.add(doctorLabel, 0, row);
-        basicGrid.add(doctorField, 1, row++);
+        basicGrid.add(doctorComboBox, 1, row++);
         
         basicGrid.add(statusLabel, 0, row);
         basicGrid.add(statusComboBox, 1, row++);
         
         basicInfoTab.setContent(basicGrid);
         
-        // Create Details tab
-        Tab detailsTab = new Tab("Medical Details");
+        // Create details tab
+        Tab detailsTab = new Tab("Details");
         GridPane detailsGrid = new GridPane();
         detailsGrid.setHgap(15);
         detailsGrid.setVgap(15);
         detailsGrid.setPadding(new javafx.geometry.Insets(20));
         
-        // Add a section title
-        Label detailsSectionTitle = new Label("Additional Information");
-        detailsSectionTitle.getStyleClass().add("form-section-title");
+        // Create details form fields
+        TextArea symptomsArea = new TextArea();
+        symptomsArea.setPrefWidth(400);
+        symptomsArea.setPrefHeight(80);
+        symptomsArea.setPromptText("Enter symptoms");
+        symptomsArea.getStyleClass().add("form-field-area");
         
-        TextArea notesArea = new TextArea();
-        notesArea.setPrefWidth(400);
-        notesArea.setPrefHeight(150);
-        notesArea.setPromptText("Enter medical notes, findings, or observations");
-        notesArea.setWrapText(true);
-        notesArea.getStyleClass().add("form-field");
+        TextArea diagnosisArea = new TextArea();
+        diagnosisArea.setPrefWidth(400);
+        diagnosisArea.setPrefHeight(80);
+        diagnosisArea.setPromptText("Enter diagnosis");
+        diagnosisArea.getStyleClass().add("form-field-area");
         
         TextField diagnosisCodesField = new TextField();
         diagnosisCodesField.setPrefWidth(400);
-        diagnosisCodesField.setPromptText("E.g., ICD-10 codes: J45.909, I10");
+        diagnosisCodesField.setPromptText("Enter diagnosis codes (e.g., ICD-10)");
         diagnosisCodesField.getStyleClass().add("form-field");
         
-        // Attachments section with list view and buttons
-        ListView<String> attachmentsListView = new ListView<>();
-        attachmentsListView.setPrefHeight(120);
-        attachmentsListView.getStyleClass().add("attachments-list");
+        TextArea treatmentArea = new TextArea();
+        treatmentArea.setPrefWidth(400);
+        treatmentArea.setPrefHeight(80);
+        treatmentArea.setPromptText("Enter treatment plan");
+        treatmentArea.getStyleClass().add("form-field-area");
         
-        Button addAttachmentButton = new Button("Add");
-        Button removeAttachmentButton = new Button("Remove");
-        addAttachmentButton.getStyleClass().addAll("action-button", "primary");
-        removeAttachmentButton.getStyleClass().add("action-button");
+        TextArea notesArea = new TextArea();
+        notesArea.setPrefWidth(400);
+        notesArea.setPrefHeight(80);
+        notesArea.setPromptText("Enter additional notes");
+        notesArea.getStyleClass().add("form-field-area");
         
-        HBox attachmentButtonsBox = new HBox(10, addAttachmentButton, removeAttachmentButton);
+        TextField attachmentsField = new TextField();
+        attachmentsField.setPrefWidth(400);
+        attachmentsField.setPromptText("Enter attachments (comma-separated file names)");
+        attachmentsField.getStyleClass().add("form-field");
         
-        // Create and style form labels
-        Label notesLabel = new Label("Notes:");
+        // Create and style labels
+        Label symptomsLabel = new Label("Symptoms:");
+        Label diagnosisLabel = new Label("Diagnosis:");
         Label diagnosisCodesLabel = new Label("Diagnosis Codes:");
+        Label treatmentLabel = new Label("Treatment Plan:");
+        Label notesLabel = new Label("Additional Notes:");
         Label attachmentsLabel = new Label("Attachments:");
         
-        notesLabel.getStyleClass().add("form-field-label");
+        // Apply styles to labels
+        symptomsLabel.getStyleClass().add("form-field-label");
+        diagnosisLabel.getStyleClass().add("form-field-label");
         diagnosisCodesLabel.getStyleClass().add("form-field-label");
+        treatmentLabel.getStyleClass().add("form-field-label");
+        notesLabel.getStyleClass().add("form-field-label");
         attachmentsLabel.getStyleClass().add("form-field-label");
         
-        // Add detail fields to grid
+        // Add fields to details grid
         row = 0;
-        detailsGrid.add(detailsSectionTitle, 0, row++, 2, 1);
+        detailsGrid.add(symptomsLabel, 0, row);
+        detailsGrid.add(symptomsArea, 1, row++);
         
-        detailsGrid.add(notesLabel, 0, row);
-        detailsGrid.add(notesArea, 1, row++);
+        detailsGrid.add(diagnosisLabel, 0, row);
+        detailsGrid.add(diagnosisArea, 1, row++);
         
         detailsGrid.add(diagnosisCodesLabel, 0, row);
         detailsGrid.add(diagnosisCodesField, 1, row++);
         
-        detailsGrid.add(attachmentsLabel, 0, row);
-        detailsGrid.add(attachmentsListView, 1, row++);
+        detailsGrid.add(treatmentLabel, 0, row);
+        detailsGrid.add(treatmentArea, 1, row++);
         
-        detailsGrid.add(new Label(""), 0, row);
-        detailsGrid.add(attachmentButtonsBox, 1, row++);
+        detailsGrid.add(notesLabel, 0, row);
+        detailsGrid.add(notesArea, 1, row++);
+        
+        detailsGrid.add(attachmentsLabel, 0, row);
+        detailsGrid.add(attachmentsField, 1, row++);
         
         detailsTab.setContent(detailsGrid);
         
         // Add tabs to tab pane
         tabPane.getTabs().addAll(basicInfoTab, detailsTab);
         
-        // If in edit mode, populate fields with record data
+        // Add tab pane to dialog
+        dialog.getDialogPane().setContent(tabPane);
+        
+        // Set field values if editing a record
         if (record != null) {
-            patientField.setText(record.getPatient());
+            // For patient, find the matching PatientItem and select it
+            for (PatientItem patientItem : patientsList) {
+                if (patientItem.getName().equals(record.getPatient())) {
+                    patientComboBox.setValue(patientItem);
+                    break;
+                }
+            }
+            
             typeComboBox.setValue(record.getType());
-            datePicker.setValue(LocalDate.parse(record.getDate()));
-            doctorField.setText(record.getDoctor());
+            
+            try {
+                LocalDate date = LocalDate.parse(record.getDate(), DATE_FORMATTER);
+                datePicker.setValue(date);
+            } catch (Exception e) {
+                datePicker.setValue(LocalDate.now());
+            }
+            
+            // For doctor, find the matching DoctorItem and select it
+            for (DoctorItem doctorItem : doctorsList) {
+                if (doctorItem.getName().equals(record.getDoctor())) {
+                    doctorComboBox.setValue(doctorItem);
+                    break;
+                }
+            }
+            
             statusComboBox.setValue(record.getStatus());
-            notesArea.setText(record.getNotes());
-            diagnosisCodesField.setText(record.getDiagnosisCodes());
             
-            if (record.getAttachments() != null && !record.getAttachments().isEmpty()) {
-                String[] attachments = record.getAttachments().split(",");
-                attachmentsListView.getItems().addAll(attachments);
-            }
-            
-            // If it's view-only
-            if (title.startsWith("View")) {
-                patientField.setEditable(false);
-                typeComboBox.setDisable(true);
-                datePicker.setDisable(true);
-                doctorField.setEditable(false);
-                statusComboBox.setDisable(true);
-                notesArea.setEditable(false);
-                diagnosisCodesField.setEditable(false);
-                addAttachmentButton.setDisable(true);
-                removeAttachmentButton.setDisable(true);
-            }
+            // Set details tab fields
+            symptomsArea.setText(record.getSymptoms() != null ? record.getSymptoms() : "");
+            diagnosisArea.setText(record.getDiagnosis() != null ? record.getDiagnosis() : "");
+            diagnosisCodesField.setText(record.getDiagnosisCodes() != null ? record.getDiagnosisCodes() : "");
+            treatmentArea.setText(record.getTreatment() != null ? record.getTreatment() : "");
+            notesArea.setText(record.getNotes() != null ? record.getNotes() : "");
+            attachmentsField.setText(record.getAttachments() != null ? record.getAttachments() : "");
         } else {
-            // Default values for new record
-            typeComboBox.setValue("Consultation");
+            // Set default values for a new record
             statusComboBox.setValue("Pending");
         }
         
-        // Setup attachment buttons
-        addAttachmentButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select Attachment");
-            fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("All Files", "*.*"),
-                new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif"),
-                new FileChooser.ExtensionFilter("Documents", "*.pdf", "*.doc", "*.docx", "*.txt")
-            );
-            
-            File selectedFile = fileChooser.showOpenDialog(dialog.getDialogPane().getScene().getWindow());
-            
-            if (selectedFile != null) {
-                // In a real application, we would upload/attach the file
-                // For this demo, we'll just add the file name to the list
-                attachmentsListView.getItems().add(selectedFile.getName());
-            }
-        });
+        // Request focus on the patient combo box
+        patientComboBox.requestFocus();
         
-        removeAttachmentButton.setOnAction(e -> {
-            int selectedIndex = attachmentsListView.getSelectionModel().getSelectedIndex();
-            if (selectedIndex >= 0) {
-                attachmentsListView.getItems().remove(selectedIndex);
-            } else {
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("No Selection");
-                alert.setHeaderText(null);
-                alert.setContentText("Please select an attachment to remove");
-                alert.getDialogPane().getStyleClass().add("custom-alert");
-                alert.showAndWait();
-            }
-        });
-        
-        // Form validation
-        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
-        saveButton.setDisable(true);
-        
-        // Add validation indicators
-        Label patientValidationLabel = new Label("*");
-        Label typeValidationLabel = new Label("*");
-        Label dateValidationLabel = new Label("*");
-        Label doctorValidationLabel = new Label("*");
-        Label statusValidationLabel = new Label("*");
-        
-        patientValidationLabel.setStyle("-fx-text-fill: -fx-error-color;");
-        typeValidationLabel.setStyle("-fx-text-fill: -fx-error-color;");
-        dateValidationLabel.setStyle("-fx-text-fill: -fx-error-color;");
-        doctorValidationLabel.setStyle("-fx-text-fill: -fx-error-color;");
-        statusValidationLabel.setStyle("-fx-text-fill: -fx-error-color;");
-        
-        // Enable/disable save button based on form validation
-        Runnable validateForm = () -> {
-            boolean isPatientValid = !patientField.getText().trim().isEmpty();
-            boolean isTypeValid = typeComboBox.getValue() != null;
-            boolean isDateValid = datePicker.getValue() != null;
-            boolean isDoctorValid = !doctorField.getText().trim().isEmpty();
-            boolean isStatusValid = statusComboBox.getValue() != null;
-            
-            // Update validation indicators
-            patientValidationLabel.setVisible(!isPatientValid);
-            typeValidationLabel.setVisible(!isTypeValid);
-            dateValidationLabel.setVisible(!isDateValid);
-            doctorValidationLabel.setVisible(!isDoctorValid);
-            statusValidationLabel.setVisible(!isStatusValid);
-            
-            boolean isValid = isPatientValid && isTypeValid && isDateValid && isDoctorValid && isStatusValid;
-            saveButton.setDisable(!isValid);
-        };
-        
-        // Add validation listeners
-        patientField.textProperty().addListener((obs, oldVal, newVal) -> validateForm.run());
-        typeComboBox.valueProperty().addListener((obs, oldVal, newVal) -> validateForm.run());
-        datePicker.valueProperty().addListener((obs, oldVal, newVal) -> validateForm.run());
-        doctorField.textProperty().addListener((obs, oldVal, newVal) -> validateForm.run());
-        statusComboBox.valueProperty().addListener((obs, oldVal, newVal) -> validateForm.run());
-        
-        // Run initial validation
-        validateForm.run();
-        
-        // Add content to dialog
-        dialog.getDialogPane().setContent(tabPane);
-        
-        // Request focus on the patient field by default
-        patientField.requestFocus();
-        
-        // Convert the result to MedicalRecord object when dialog is confirmed
+        // Convert the result when the dialog is confirmed
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                String id;
-                if (record != null) {
-                    // Editing existing record - use same ID
-                    id = record.getId();
-                } else {
-                    // Generate a new ID for new record
-                    id = "MR-" + String.format("%05d", (int)(Math.random() * 100000));
+                // Validate required fields
+                if (patientComboBox.getValue() == null) {
+                    showErrorAlert("Validation Error", "Patient is required.");
+                    return null;
                 }
                 
-                // Join attachments into a comma-separated string
-                StringBuilder attachmentsStr = new StringBuilder();
-                for (String attachment : attachmentsListView.getItems()) {
-                    if (attachmentsStr.length() > 0) {
-                        attachmentsStr.append(",");
-                    }
-                    attachmentsStr.append(attachment);
+                if (typeComboBox.getValue() == null) {
+                    showErrorAlert("Validation Error", "Record type is required.");
+                    return null;
                 }
                 
-                return new MedicalRecord(
-                    id,
-                    patientField.getText().trim(),
-                    datePicker.getValue().format(DATE_FORMATTER),
-                    typeComboBox.getValue(),
-                    doctorField.getText().trim(),
-                    statusComboBox.getValue(),
-                    notesArea.getText().trim(),
-                    diagnosisCodesField.getText().trim(),
-                    attachmentsStr.toString()
+                if (doctorComboBox.getValue() == null) {
+                    showErrorAlert("Validation Error", "Doctor is required.");
+                    return null;
+                }
+                
+                if (statusComboBox.getValue() == null) {
+                    showErrorAlert("Validation Error", "Status is required.");
+                    return null;
+                }
+                
+                // Create a new record or update the existing one
+                String id = record != null ? record.getId() : "MR-" + UUID.randomUUID().toString().substring(0, 8);
+                String patientName = patientComboBox.getValue().getName();
+                String date = datePicker.getValue().format(DATE_FORMATTER);
+                String type = typeComboBox.getValue();
+                String doctorName = doctorComboBox.getValue().getName();
+                String status = statusComboBox.getValue();
+                String notes = notesArea.getText();
+                String diagnosisCodes = diagnosisCodesField.getText();
+                String attachments = attachmentsField.getText();
+                String symptoms = symptomsArea.getText();
+                String diagnosis = diagnosisArea.getText();
+                String treatment = treatmentArea.getText();
+                
+                MedicalRecord newRecord = new MedicalRecord(
+                    id, patientName, date, type, doctorName, status, 
+                    notes, diagnosisCodes, attachments,
+                    symptoms, diagnosis, treatment
                 );
+                
+                // Set additional fields that aren't in the constructor
+                try {
+                    // For database persistence, set IDs
+                    com.example.demo.model.MedicalRecord dbRecord = medicalRecordDAO.convertToDbFormat(newRecord);
+                    dbRecord.setPatientId(patientComboBox.getValue().getId());
+                    dbRecord.setDoctorId(doctorComboBox.getValue().getId());
+                    dbRecord.setSymptoms(symptoms);
+                    dbRecord.setDiagnosis(diagnosis);
+                    dbRecord.setTreatment(treatment);
+                    
+                    // If we're editing an existing record, set its ID
+                    if (record != null) {
+                        dbRecord.setRecordId(Integer.parseInt(record.getId().replace("MR-", "")));
+                    }
+                    
+                    if (record == null) {
+                        // Create new record
+                        medicalRecordDAO.createMedicalRecord(dbRecord);
+                    } else {
+                        // Update existing record
+                        medicalRecordDAO.updateMedicalRecord(dbRecord);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error saving record to database: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                return newRecord;
             }
             return null;
         });
         
-        // Show dialog and process result
+        // Show the dialog and wait for result
         Optional<MedicalRecord> result = dialog.showAndWait();
         
+        // Process the result
         result.ifPresent(newRecord -> {
-            if (record != null) {
-                // Update existing record
-                updateRecord(record, newRecord);
-            } else {
+            if (record == null) {
                 // Add new record
                 addRecord(newRecord);
+                showSuccessAlert("Record Added", "Medical record has been successfully added.");
+            } else {
+                // Update existing record
+                updateRecord(record, newRecord);
+                showSuccessAlert("Record Updated", "Medical record has been successfully updated.");
             }
         });
     }
     
     /**
-     * Add a new medical record
+     * Add a new medical record - only updates UI, not database
+     * (Database save is handled in showRecordDialog)
      */
     private void addRecord(MedicalRecord record) {
-        // Add to main record list
+        // Add to UI
         allRecordsList.add(record);
         
-        // Add to type-specific list
+        // Update type-specific collections
         String type = record.getType();
         if (recordsByType.containsKey(type)) {
             recordsByType.get(type).add(record);
+        } else {
+            ObservableList<MedicalRecord> typeList = FXCollections.observableArrayList(record);
+            recordsByType.put(type, typeList);
         }
         
-        // Update stats and refresh view
-        updateStatsDashboard();
-        updateTotalRecordsLabel();
+        // Database save is already done in showRecordDialog() method
+        // Don't save to database here to avoid duplicate saves
         
-        // Show success message
-        showSuccessAlert("Record Added", "Medical record has been successfully added.");
+        // Update UI
+        updateTotalRecordsLabel();
+        updateStatsDashboard();
     }
     
     /**
-     * Update an existing medical record
+     * Update an existing medical record - only updates UI, not database
+     * (Database update is handled in showRecordDialog)
      */
     private void updateRecord(MedicalRecord oldRecord, MedicalRecord newRecord) {
-        // Find and update in main list
+        // Update in UI
         int index = allRecordsList.indexOf(oldRecord);
         if (index >= 0) {
             allRecordsList.set(index, newRecord);
         }
         
-        // Update in type-specific lists if type has changed
-        if (!oldRecord.getType().equals(newRecord.getType())) {
-            // Remove from old type list
-            recordsByType.get(oldRecord.getType()).remove(oldRecord);
-            
-            // Add to new type list
-            if (recordsByType.containsKey(newRecord.getType())) {
-                recordsByType.get(newRecord.getType()).add(newRecord);
+        // Update in type-specific collections
+        String oldType = oldRecord.getType();
+        String newType = newRecord.getType();
+        
+        if (oldType.equals(newType)) {
+            // Same type, just update
+            if (recordsByType.containsKey(oldType)) {
+                ObservableList<MedicalRecord> typeList = recordsByType.get(oldType);
+                int typeIndex = typeList.indexOf(oldRecord);
+                if (typeIndex >= 0) {
+                    typeList.set(typeIndex, newRecord);
+                }
             }
         } else {
-            // Just update in the same type list
-            ObservableList<MedicalRecord> typeList = recordsByType.get(newRecord.getType());
-            int typeIndex = typeList.indexOf(oldRecord);
-            if (typeIndex >= 0) {
-                typeList.set(typeIndex, newRecord);
+            // Type changed, remove from old and add to new
+            if (recordsByType.containsKey(oldType)) {
+                recordsByType.get(oldType).remove(oldRecord);
+            }
+            
+            if (recordsByType.containsKey(newType)) {
+                recordsByType.get(newType).add(newRecord);
+            } else {
+                ObservableList<MedicalRecord> typeList = FXCollections.observableArrayList(newRecord);
+                recordsByType.put(newType, typeList);
             }
         }
         
-        // Update stats and refresh view
-        updateStatsDashboard();
-        updateTotalRecordsLabel();
+        // Database update is already done in showRecordDialog() method
+        // Don't update database here to avoid duplicate updates
         
-        // Show success message
-        showSuccessAlert("Record Updated", "Medical record has been successfully updated.");
+        // Update UI
+        updateStatsDashboard();
+    }
+    
+    /**
+     * Handle deleting a record
+     */
+    private void handleDeleteRecord(MedicalRecord record) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Confirm Deletion");
+        confirmAlert.setHeaderText("Delete Medical Record");
+        confirmAlert.setContentText("Are you sure you want to delete this medical record? This action cannot be undone.");
+        
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.get() == ButtonType.OK) {
+            // Delete from UI
+            allRecordsList.remove(record);
+            
+            // Delete from type-specific collections
+            String type = record.getType();
+            if (recordsByType.containsKey(type)) {
+                recordsByType.get(type).remove(record);
+            }
+            
+            // Delete from database
+            try {
+                int recordId = Integer.parseInt(record.getId().replace("MR-", ""));
+                medicalRecordDAO.deleteMedicalRecord(recordId);
+            } catch (Exception e) {
+                System.err.println("Error deleting record from database: " + e.getMessage());
+                e.printStackTrace();
+            }
+            
+            // Update UI
+            updateTotalRecordsLabel();
+            updateStatsDashboard();
+            
+            showSuccessAlert("Record Deleted", "The medical record has been successfully deleted.");
+        }
     }
     
     /**
@@ -1524,13 +1473,30 @@ public class MedicalRecordsController {
         private final String notes;
         private final String diagnosisCodes;
         private final String attachments;
+        private final String symptoms;
+        private final String diagnosis;
+        private final String treatment;
+        private Integer patientId;
+        private String patientName;
+        private Integer doctorId;
+        private String doctorName;
+        private String visitType;
+        private Date visitDate;
+        private Date followUpDate;
+        private String recordType;
         
         public MedicalRecord(String id, String patient, String date, String type, String doctor, String status) {
-            this(id, patient, date, type, doctor, status, "", "", "");
+            this(id, patient, date, type, doctor, status, "", "", "", "", "", "");
         }
         
         public MedicalRecord(String id, String patient, String date, String type, String doctor, String status, 
                             String notes, String diagnosisCodes, String attachments) {
+            this(id, patient, date, type, doctor, status, notes, diagnosisCodes, attachments, "", "", "");
+        }
+        
+        public MedicalRecord(String id, String patient, String date, String type, String doctor, String status, 
+                            String notes, String diagnosisCodes, String attachments, 
+                            String symptoms, String diagnosis, String treatment) {
             this.id = id;
             this.patient = patient;
             this.date = date;
@@ -1540,6 +1506,9 @@ public class MedicalRecordsController {
             this.notes = notes;
             this.diagnosisCodes = diagnosisCodes;
             this.attachments = attachments;
+            this.symptoms = symptoms;
+            this.diagnosis = diagnosis;
+            this.treatment = treatment;
         }
         
         public String getId() { return id; }
@@ -1551,6 +1520,17 @@ public class MedicalRecordsController {
         public String getNotes() { return notes; }
         public String getDiagnosisCodes() { return diagnosisCodes; }
         public String getAttachments() { return attachments; }
+        public String getSymptoms() { return symptoms; }
+        public String getDiagnosis() { return diagnosis; }
+        public String getTreatment() { return treatment; }
+        public Integer getPatientId() { return patientId; }
+        public String getPatientName() { return patientName; }
+        public Integer getDoctorId() { return doctorId; }
+        public String getDoctorName() { return doctorName; }
+        public String getVisitType() { return visitType; }
+        public Date getVisitDate() { return visitDate; }
+        public Date getFollowUpDate() { return followUpDate; }
+        public String getRecordType() { return recordType; }
         
         @Override
         public boolean equals(Object o) {
@@ -2324,5 +2304,569 @@ public class MedicalRecordsController {
         HBox.setHgrow(content, Priority.ALWAYS);
         
         return row;
+    }
+    
+    /**
+     * Inner class to represent a patient in the dropdown
+     */
+    private static class PatientItem {
+        private final int id;
+        private final String name;
+        
+        public PatientItem(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+        
+        public int getId() { return id; }
+        public String getName() { return name; }
+        
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+    
+    /**
+     * Inner class to represent a doctor in the dropdown
+     */
+    private static class DoctorItem {
+        private final int id;
+        private final String name;
+        
+        public DoctorItem(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+        
+        public int getId() { return id; }
+        public String getName() { return name; }
+        
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+    
+    /**
+     * Load patients for the dropdown
+     */
+    private void loadPatients() {
+        patientsList.clear();
+        
+        try {
+            List<Patient> patients = patientDAO.getAllPatients();
+            for (Patient patient : patients) {
+                patientsList.add(new PatientItem(
+                    patient.getPatientId(),
+                    patient.getFirstName() + " " + patient.getLastName()
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading patients: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Load doctors for the dropdown
+     */
+    private void loadDoctors() {
+        doctorsList.clear();
+        
+        try {
+            List<User> doctors = userDAO.getUsersByRole(UserRole.DOCTOR);
+            for (User doctor : doctors) {
+                doctorsList.add(new DoctorItem(
+                    doctor.getUserId(),
+                    doctor.getFullName()
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading doctors: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Method to export a medical record
+     * 
+     * @param record The record to export
+     */
+    private void exportRecord(MedicalRecord record) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Export Record");
+        dialog.setHeaderText("Export Options");
+        
+        // Create a GridPane for the dialog content
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        
+        // Add format options
+        Label formatLabel = new Label("Export Format:");
+        ToggleGroup formatGroup = new ToggleGroup();
+        RadioButton pdfRadio = new RadioButton("PDF");
+        RadioButton csvRadio = new RadioButton("CSV");
+        RadioButton webRadio = new RadioButton("Web Link (Recommended)");
+        
+        pdfRadio.setToggleGroup(formatGroup);
+        csvRadio.setToggleGroup(formatGroup);
+        webRadio.setToggleGroup(formatGroup);
+        webRadio.setSelected(true); // Make web link the default option
+        
+        grid.add(formatLabel, 0, 0);
+        grid.add(webRadio, 1, 0);
+        grid.add(pdfRadio, 1, 1);
+        grid.add(csvRadio, 1, 2);
+        
+        // Add additional options
+        Label optionsLabel = new Label("Include:");
+        CheckBox includeMetadataBox = new CheckBox("Metadata");
+        CheckBox includeNotesBox = new CheckBox("Notes");
+        CheckBox includeHeadersBox = new CheckBox("Headers");
+        
+        includeMetadataBox.setSelected(true);
+        includeNotesBox.setSelected(true);
+        includeHeadersBox.setSelected(true);
+        
+        grid.add(optionsLabel, 0, 3);
+        grid.add(includeMetadataBox, 1, 3);
+        grid.add(includeNotesBox, 1, 4);
+        grid.add(includeHeadersBox, 1, 5);
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // Disable checkbox options when web link is selected
+        webRadio.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            boolean disableOptions = newVal;
+            includeMetadataBox.setDisable(disableOptions);
+            includeNotesBox.setDisable(disableOptions);
+            includeHeadersBox.setDisable(disableOptions);
+        });
+        
+        // Trigger initial state
+        includeMetadataBox.setDisable(true);
+        includeNotesBox.setDisable(true);
+        includeHeadersBox.setDisable(true);
+        
+        // Add buttons
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        // Apply dialog styling
+        dialog.getDialogPane().getStyleClass().add("custom-dialog");
+        
+        // Show the dialog and wait for user input
+        Optional<ButtonType> result = dialog.showAndWait();
+        
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            boolean isWebLink = webRadio.isSelected();
+            boolean isCsvFormat = csvRadio.isSelected();
+            boolean includeMetadata = includeMetadataBox.isSelected();
+            boolean includeNotes = includeNotesBox.isSelected();
+            boolean includeHeaders = includeHeadersBox.isSelected();
+            
+            if (isWebLink) {
+                // Use API to generate a link and open it in the browser
+                handleWebLinkGeneration(record);
+            } else {
+                // Use the existing file-based export
+                handleFileExport(record, isCsvFormat, includeMetadata, includeNotes, includeHeaders);
+            }
+        }
+    }
+    
+    /**
+     * Handle the generation of a web link for a record
+     * 
+     * @param record The record to generate a link for
+     */
+    private void handleWebLinkGeneration(MedicalRecord record) {
+        ProgressIndicator progressIndicator = showProgressIndicator("Generating link...");
+        new Thread(() -> {
+            String url = generateRecordLink(record);
+            Platform.runLater(() -> {
+                closeProgressIndicator(progressIndicator);
+                if (url != null) {
+                    boolean opened = openInBrowser(url);
+                    if (opened) {
+                        showSuccessMessage("Web View",
+                            "The medical record has been opened in your web browser.",
+                            "You can now view, print, or share this record via the web interface.");
+                    } else {
+                        showErrorMessage("Failed to open browser",
+                            "The link was generated but could not be opened in your browser.");
+                    }
+                } else {
+                    showErrorMessage("Link Generation Failed",
+                        "Could not generate a web link for this record. Please try again or use PDF export.");
+                }
+            });
+        }).start();
+    }
+    
+    /**
+     * Handle the file-based export of a record
+     * 
+     * @param record The record to export
+     * @param isCsvFormat Whether to export as CSV or PDF
+     * @param includeMetadata Whether to include metadata
+     * @param includeNotes Whether to include notes
+     * @param includeHeaders Whether to include headers
+     */
+    private void handleFileExport(MedicalRecord record, boolean isCsvFormat, 
+                                 boolean includeMetadata, boolean includeNotes, boolean includeHeaders) {
+        // Set up file chooser
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Export File");
+        
+        // Set extension filter based on format
+        if (isCsvFormat) {
+            fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+            fileChooser.setInitialFileName("medical_record_" + record.getId() + ".csv");
+        } else {
+            fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
+            fileChooser.setInitialFileName("medical_record_" + record.getId() + ".pdf");
+        }
+        
+        // Show save dialog
+        File file = fileChooser.showSaveDialog(null);
+        
+        if (file != null) {
+            // Create a list with just this record
+            List<MedicalRecord> recordList = new ArrayList<>();
+            recordList.add(record);
+            
+            // Export the record
+            boolean success = false;
+            if (isCsvFormat) {
+                success = exportToCsv(file, recordList, includeHeaders, includeMetadata, includeNotes);
+            } else {
+                success = exportDetailedRecordToPdf(file, record, includeMetadata, includeNotes);
+                
+                // Show informational dialog specific to detailed PDF exports
+                if (success) {
+                    Platform.runLater(() -> {
+                        showSuccessMessage("Detailed PDF Export", "Detailed Medical Record Report",
+                            "A comprehensive clinical report has been generated in text-based PDF format. " +
+                            "The report includes patient information, medical details, and follow-up recommendations specific to the record type.\n\n" +
+                            "In a production environment, a proper PDF library would be used to create a better formatted document.");
+                    });
+                }
+            }
+            
+            // Show status message
+            if (success) {
+                Platform.runLater(() -> {
+                    showSuccessMessage("Export Successful", null,
+                        "The record was successfully exported to " + file.getAbsolutePath());
+                });
+            } else {
+                Platform.runLater(() -> {
+                    showErrorMessage("Export Failed", 
+                        "Failed to export the record. Please check file permissions and try again.");
+                });
+            }
+        }
+    }
+    
+    /**
+     * Show a progress indicator dialog
+     * 
+     * @param message The message to display
+     * @return The progress indicator dialog
+     */
+    private ProgressIndicator showProgressIndicator(String message) {
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
+        progressIndicator.setMaxSize(50, 50);
+        
+        Label statusLabel = new Label(message);
+        statusLabel.setStyle("-fx-font-size: 14px;");
+        
+        VBox vbox = new VBox(10, progressIndicator, statusLabel);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setPadding(new Insets(20));
+        
+        Stage progressStage = new Stage();
+        progressStage.setScene(new Scene(vbox));
+        progressStage.initModality(Modality.APPLICATION_MODAL);
+        progressStage.initStyle(StageStyle.UNDECORATED);
+        progressStage.show();
+        
+        return progressIndicator;
+    }
+    
+    /**
+     * Close a progress indicator dialog
+     * 
+     * @param progressIndicator The progress indicator to close
+     */
+    private void closeProgressIndicator(ProgressIndicator progressIndicator) {
+        if (progressIndicator != null) {
+            Stage stage = (Stage) progressIndicator.getScene().getWindow();
+            stage.close();
+        }
+    }
+    
+    /**
+     * Show a success message dialog
+     * 
+     * @param title The dialog title
+     * @param headerText The header text (can be null)
+     * @param message The message to display
+     */
+    private void showSuccessMessage(String title, String headerText, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(headerText);
+        alert.setContentText(message);
+        alert.getDialogPane().getStyleClass().add("custom-alert");
+        alert.showAndWait();
+    }
+    
+    /**
+     * Show an error message dialog
+     * 
+     * @param title The dialog title
+     * @param message The message to display
+     */
+    private void showErrorMessage(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText("An error occurred");
+        alert.setContentText(message);
+        alert.getDialogPane().getStyleClass().add("custom-alert");
+        alert.showAndWait();
+    }
+    
+    /**
+     * Show an error alert
+     */
+    private void showErrorAlert(String title, String content) {
+        showErrorMessage(title, content);
+    }
+    
+    /**
+     * Show a success alert
+     */
+    private void showSuccessAlert(String title, String content) {
+        showSuccessMessage(title, null, content);
+    }
+    
+    /**
+     * Show a preview dialog of the records to be exported
+     */
+    private void showPreviewDialog(List<MedicalRecord> records, boolean isCsvFormat, 
+                                 boolean includeHeaders, boolean includeMetadata, boolean includeNotes) {
+        // Create a dialog
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Export Preview");
+        dialog.setMinWidth(700);
+        dialog.setMinHeight(500);
+        
+        // Create layout
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(25));
+        root.getStyleClass().add("custom-dialog");
+        
+        // Create title
+        Label titleLabel = new Label("Export Preview");
+        titleLabel.getStyleClass().add("export-dialog-title");
+        
+        // Create format label
+        Label formatLabel = new Label(String.format(
+            "Preview of %d records in %s format", 
+            records.size(), 
+            isCsvFormat ? "CSV" : "PDF"
+        ));
+        formatLabel.getStyleClass().add("form-field-label");
+        
+        VBox headerBox = new VBox(5, titleLabel, formatLabel);
+        headerBox.setPadding(new Insets(0, 0, 15, 0));
+        
+        // Create preview area
+        TextArea previewArea = new TextArea();
+        previewArea.setEditable(false);
+        previewArea.setWrapText(false);
+        previewArea.setPrefRowCount(20);
+        previewArea.getStyleClass().add("export-preview");
+        
+        // Generate preview content
+        StringBuilder previewContent = new StringBuilder();
+        
+        if (includeMetadata) {
+            // Add report metadata
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String timestamp = dateFormat.format(new Date());
+            
+            previewContent.append("Export Date: ").append(timestamp).append("\n");
+            previewContent.append("Total Records: ").append(records.size()).append("\n");
+            previewContent.append("Format: ").append(isCsvFormat ? "CSV" : "PDF").append("\n");
+            previewContent.append("\n");
+        }
+        
+        if (isCsvFormat) {
+            // CSV Format
+            if (includeHeaders) {
+                previewContent.append("ID,Date,Patient,Type,Doctor,Status");
+                if (includeNotes) {
+                    previewContent.append(",Notes,Attachments");
+                }
+                previewContent.append("\n");
+            }
+            
+            // Add records
+            for (MedicalRecord record : records) {
+                previewContent.append(record.getId()).append(",");
+                previewContent.append(record.getDate()).append(",");
+                previewContent.append("\"").append(record.getPatient()).append("\",");
+                previewContent.append("\"").append(record.getType()).append("\",");
+                previewContent.append("\"").append(record.getDoctor()).append("\",");
+                previewContent.append("\"").append(record.getStatus()).append("\"");
+                
+                if (includeNotes) {
+                    previewContent.append(",\"").append(record.getNotes().replace("\"", "\"\"")).append("\",");
+                    previewContent.append("\"").append(record.getAttachments()).append("\"");
+                }
+                
+                previewContent.append("\n");
+            }
+        } else {
+            // PDF Format (simulated as text)
+            previewContent.append("==================================\n");
+            previewContent.append("       MEDICAL RECORDS REPORT      \n");
+            previewContent.append("==================================\n\n");
+            
+            if (includeHeaders) {
+                previewContent.append(String.format("%-6s %-12s %-20s %-15s %-20s %-10s\n", 
+                    "ID", "Date", "Patient", "Type", "Doctor", "Status"));
+                previewContent.append("----------------------------------------------------------------------\n");
+            }
+            
+            // Add records
+            for (MedicalRecord record : records) {
+                previewContent.append(String.format("%-6s %-12s %-20s %-15s %-20s %-10s\n", 
+                    record.getId(), 
+                    record.getDate(), 
+                    record.getPatient(), 
+                    record.getType(), 
+                    record.getDoctor(), 
+                    record.getStatus()
+                ));
+                
+                if (includeNotes) {
+                    previewContent.append("\nNotes: ").append(record.getNotes()).append("\n");
+                    
+                    if (record.getAttachments() != null && !record.getAttachments().isEmpty()) {
+                        previewContent.append("Attachments: ").append(record.getAttachments()).append("\n");
+                    }
+                    
+                    previewContent.append("----------------------------------------------------------------------\n");
+                }
+            }
+        }
+        
+        previewArea.setText(previewContent.toString());
+        
+        // Create close button
+        Button closeButton = new Button("Close");
+        closeButton.getStyleClass().add("action-button");
+        closeButton.setPrefWidth(100);
+        closeButton.setOnAction(e -> dialog.close());
+        
+        HBox buttons = new HBox(closeButton);
+        buttons.setAlignment(Pos.CENTER_RIGHT);
+        buttons.setPadding(new Insets(15, 0, 0, 0));
+        
+        // Assemble layout
+        root.setTop(headerBox);
+        root.setCenter(previewArea);
+        root.setBottom(buttons);
+        
+        // Set scene and show dialog
+        Scene scene = new Scene(root);
+        scene.getStylesheets().addAll(recordsTable.getScene().getStylesheets());
+        dialog.setScene(scene);
+        dialog.showAndWait();
+    }
+
+    // New method to generate record link by consuming the external API
+    private String generateRecordLink(MedicalRecord record) {
+        String apiUrl = "http://localhost:5000/api/records/generate-link";
+        try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+            conn.setDoOutput(true);
+            
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            isoFormat.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            
+            org.json.JSONObject payload = new org.json.JSONObject();
+            payload.put("patient_id", record.getPatientId() != null ? record.getPatientId() : "nan");
+            payload.put("patient_name", record.getPatientName() != null ? record.getPatientName() : "nan");
+            payload.put("doctor_id", record.getDoctorId() != null ? record.getDoctorId() : "nan");
+            payload.put("doctor_name", record.getDoctorName() != null ? record.getDoctorName() : "nan");
+            payload.put("visit_type", record.getVisitType() != null ? record.getVisitType() : "nan");
+            payload.put("visit_date", record.getVisitDate() != null ? isoFormat.format(record.getVisitDate()) : "nan");
+            payload.put("diagnosis", record.getDiagnosis() != null ? record.getDiagnosis() : "nan");
+            payload.put("symptoms", record.getSymptoms() != null ? record.getSymptoms() : "nan");
+            payload.put("treatment", record.getTreatment() != null ? record.getTreatment() : "nan");
+            payload.put("notes", record.getNotes() != null ? record.getNotes() : "nan");
+            payload.put("status", record.getStatus() != null ? record.getStatus() : "nan");
+            payload.put("diagnosis_codes", record.getDiagnosisCodes() != null ? record.getDiagnosisCodes() : "nan");
+            payload.put("attachments", record.getAttachments() != null ? record.getAttachments() : "nan");
+            payload.put("follow_up_date", record.getFollowUpDate() != null ? isoFormat.format(record.getFollowUpDate()) : "nan");
+            payload.put("record_type", record.getRecordType() != null ? record.getRecordType() : "nan");
+            
+            String jsonPayload = payload.toString();
+            
+            try(OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonPayload.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+            
+            int code = conn.getResponseCode();
+            InputStream is = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream();
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, "utf-8"));
+            StringBuilder response = new StringBuilder();
+            String responseLine;
+            while ((responseLine = br.readLine()) != null) {
+                response.append(responseLine.trim());
+            }
+            
+            org.json.JSONObject jsonResponse = new org.json.JSONObject(response.toString());
+            if(jsonResponse.getBoolean("success")) {
+                return jsonResponse.getJSONObject("links").getString("record_page");
+            } else {
+                System.err.println("Failed to generate link: " + jsonResponse.getString("message"));
+                return null;
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // New helper method to open URL in default browser
+    private boolean openInBrowser(String url) {
+        try {
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(new URI(url));
+                return true;
+            } else {
+                System.err.println("Desktop is not supported.");
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 } 
