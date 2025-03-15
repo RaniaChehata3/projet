@@ -255,7 +255,7 @@
                                     <TableColumn fx:id="appointmentPatientColumn" text="Patient" prefWidth="200"/>
                                     <TableColumn fx:id="appointmentPurposeColumn" text="Purpose" prefWidth="200"/>
                                     <TableColumn fx:id="appointmentStatusColumn" text="Status" prefWidth="120"/>
-                                    <TableColumn fx:id="appointmentActionsColumn" text="Actions" prefWidth="180"/>
+                                    <TableColumn fx:id="appointmentActionsColumn" text="Actions" prefWidth="280"/>
                                 </columns>
                             </TableView>
                         </VBox>
@@ -288,7 +288,7 @@
                                     <TableColumn fx:id="noteTimeColumn" text="Date" prefWidth="120"/>
                                     <TableColumn fx:id="notePatientColumn" text="Patient" prefWidth="200"/>
                                     <TableColumn fx:id="noteSummaryColumn" text="Summary" prefWidth="450"/>
-                                    <TableColumn fx:id="noteActionsColumn" text="Actions" prefWidth="230"/>
+                                    <TableColumn fx:id="noteActionsColumn" text="Actions" prefWidth="280"/>
                                 </columns>
                             </TableView>
                         </VBox>

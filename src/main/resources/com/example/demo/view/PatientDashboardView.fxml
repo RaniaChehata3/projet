@@ -146,7 +146,7 @@
                                     <TableColumn fx:id="appointmentTimeColumn" text="Time" prefWidth="100"/>
                                     <TableColumn fx:id="appointmentDoctorColumn" text="Doctor" prefWidth="200"/>
                                     <TableColumn fx:id="appointmentPurposeColumn" text="Purpose" prefWidth="200"/>
-                                    <TableColumn fx:id="appointmentActionsColumn" text="Actions" prefWidth="150"/>
+                                    <TableColumn fx:id="appointmentActionsColumn" text="Actions" prefWidth="250"/>
                                 </columns>
                                 <placeholder>
                                     <Label text="No upcoming appointments" />

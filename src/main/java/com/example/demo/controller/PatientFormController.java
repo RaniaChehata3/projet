@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.function.Consumer;
 
 /**
  * Controller for the Patient Form view.
@@ -55,6 +56,7 @@ public class PatientFormController {
     private final PatientDAO patientDAO = PatientDAO.getInstance();
     private FormMode mode = FormMode.ADD;
     private Patient patient;
+    private Consumer<Patient> onSaveCallback;
     
     /**
      * Initialize the controller.
@@ -166,18 +168,55 @@ public class PatientFormController {
     }
     
     /**
+     * Sets a callback to be called when a patient is successfully saved
+     * 
+     * @param callback The callback to execute with the saved patient
+     */
+    public void setOnSaveCallback(Consumer<Patient> callback) {
+        this.onSaveCallback = callback;
+    }
+    
+    /**
      * Handle save button click.
      * @param event The action event
      */
     @FXML
     private void onSave(ActionEvent event) {
-        if (validateForm()) {
-            if (mode == FormMode.ADD) {
-                addPatient();
-            } else {
-                updatePatient();
+        try {
+            System.out.println("Starting patient save process...");
+            
+            if (!validateForm()) {
+                System.out.println("Form validation failed");
+                return;
             }
-            closeForm();
+            
+            Patient newPatient = createPatientFromForm();
+            System.out.println("Created patient object: " + newPatient);
+            
+            boolean success;
+            
+            if (mode == FormMode.ADD) {
+                System.out.println("Adding new patient...");
+                success = addPatient();
+            } else {
+                System.out.println("Updating existing patient with ID: " + patient.getPatientId());
+                success = updatePatient();
+            }
+            
+            if (success) {
+                System.out.println("Patient save successful!");
+                if (onSaveCallback != null) {
+                    onSaveCallback.accept(newPatient);
+                }
+                closeForm();
+            } else {
+                System.err.println("Patient save failed!");
+                showErrorAlert("Save Failed", "There was an error saving the patient data. Please check the console for more details.");
+            }
+        } catch (Exception e) {
+            System.err.println("Exception during patient save: " + e.getMessage());
+            e.printStackTrace();
+            showErrorAlert("Error", "An unexpected error occurred: " + e.getMessage());
         }
     }
     
@@ -304,21 +343,23 @@ public class PatientFormController {
     /**
      * Add a new patient.
      */
-    private void addPatient() {
+    private boolean addPatient() {
         Patient newPatient = createPatientFromForm();
         boolean success = patientDAO.createPatient(newPatient);
         
         if (success) {
             showSuccessAlert("Patient Added", "Patient has been successfully added.");
+            return true;
         } else {
             showErrorAlert("Add Failed", "Failed to add patient. Please try again.");
+            return false;
         }
     }
     
     /**
      * Update an existing patient.
      */
-    private void updatePatient() {
+    private boolean updatePatient() {
         Patient updatedPatient = createPatientFromForm();
         updatedPatient.setPatientId(patient.getPatientId());
         
@@ -326,8 +367,10 @@ public class PatientFormController {
         
         if (success) {
             showSuccessAlert("Patient Updated", "Patient information has been successfully updated.");
+            return true;
         } else {
             showErrorAlert("Update Failed", "Failed to update patient. Please try again.");
+            return false;
         }
     }
     

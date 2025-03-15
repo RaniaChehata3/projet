@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.auth.AuthService;
+import com.example.demo.database.MedicalRecordDAO;
 import com.example.demo.database.PatientDAO;
 import com.example.demo.model.*;
 
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -269,25 +271,31 @@ public class PatientDetailsController {
      * Load medical data for the patient.
      */
     private void loadMedicalData() {
-        // In a real implementation, this would load data from the respective DAOs
-        // Since the methods don't exist, use empty collections
-        
-        // Fix getMedicalHistory
-        ObservableList<MedicalRecord> medicalHistory = FXCollections.observableArrayList();
-        // You could load from a DAO here if available: medicalRecordDAO.getByPatientId(patient.getPatientId());
-        medicalHistoryTable.setItems(medicalHistory);
-        
-        // Fix getMedications
-        ObservableList<Medication> medications = FXCollections.observableArrayList();
-        medicationsTable.setItems(medications);
-        
-        // Fix getLabResults
-        ObservableList<LabResult> labResults = FXCollections.observableArrayList();
-        labResultsTable.setItems(labResults);
-        
-        // Fix getNotes
-        ObservableList<Note> notes = FXCollections.observableArrayList();
-        notesTable.setItems(notes);
+        if (patient != null) {
+            // Load medical records from DAO
+            MedicalRecordDAO medicalRecordDAO = new MedicalRecordDAO();
+            List<MedicalRecord> medicalHistory = medicalRecordDAO.getMedicalRecordsByPatientId(patient.getPatientId());
+            
+            // Update the table
+            medicalHistoryTable.setItems(FXCollections.observableArrayList(medicalHistory));
+            
+            // Update last visit date label if there are records
+            if (!medicalHistory.isEmpty()) {
+                // Sort by visit date descending to get the most recent visit
+                medicalHistory.sort((a, b) -> b.getVisitDate().compareTo(a.getVisitDate()));
+                lastVisitDateLabel.setText(medicalHistory.get(0).getVisitDate().format(dateTimeFormatter));
+            }
+            
+            // Keep the other tables with empty collections for now (placeholder)
+            ObservableList<Medication> medications = FXCollections.observableArrayList();
+            medicationsTable.setItems(medications);
+            
+            ObservableList<LabResult> labResults = FXCollections.observableArrayList();
+            labResultsTable.setItems(labResults);
+            
+            ObservableList<Note> notes = FXCollections.observableArrayList();
+            notesTable.setItems(notes);
+        }
     }
     
     /**
@@ -295,13 +303,34 @@ public class PatientDetailsController {
      * @param record The medical record to display
      */
     private void showMedicalRecordDetails(MedicalRecord record) {
-        showInfoDialog("Medical Record Details", 
-                      "Date: " + record.getVisitDate().format(dateTimeFormatter) + "\n" +
-                      "Doctor ID: " + record.getDoctorId() + "\n" +
-                      "Diagnosis: " + record.getDiagnosis() + "\n" +
-                      "Symptoms: " + record.getSymptoms() + "\n" +
-                      "Treatment: " + record.getTreatment() + "\n" +
-                      "Notes: " + record.getNotes());
+        try {
+            // Load the medical record form for viewing/editing
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/demo/view/MedicalRecordFormView.fxml"));
+            Parent root = loader.load();
+            
+            // Get the controller and setup
+            MedicalRecordFormController controller = loader.getController();
+            controller.setMode(MedicalRecordFormController.FormMode.EDIT);
+            controller.setPatient(patient);
+            controller.setMedicalRecord(record);
+            
+            // Set callback for when a record is saved
+            controller.setOnSaveCallback(savedRecord -> {
+                // Reload medical history after saving
+                loadMedicalData();
+            });
+            
+            // Show the form in a new window
+            Stage stage = new Stage();
+            stage.setTitle("Medical Record Details");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorDialog("Error", "Could not open medical record details.\nError: " + e.getMessage());
+        }
     }
     
     /**
@@ -362,8 +391,33 @@ public class PatientDetailsController {
      */
     @FXML
     private void onAddMedicalRecord(ActionEvent event) {
-        // In a real implementation, this would open a form to add a new medical record
-        showInfoDialog("Add Medical Record", "This feature is not implemented yet.");
+        try {
+            // Load the medical record form
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/demo/view/MedicalRecordFormView.fxml"));
+            Parent root = loader.load();
+            
+            // Get the controller and setup
+            MedicalRecordFormController controller = loader.getController();
+            controller.setMode(MedicalRecordFormController.FormMode.ADD);
+            controller.setPatient(patient);
+            
+            // Set callback for when a record is saved
+            controller.setOnSaveCallback(savedRecord -> {
+                // Reload medical history after saving
+                loadMedicalData();
+            });
+            
+            // Show the form in a new window
+            Stage stage = new Stage();
+            stage.setTitle("Add Medical Record");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorDialog("Error", "Could not open medical record form.\nError: " + e.getMessage());
+        }
     }
     
     /**
@@ -453,8 +507,18 @@ public class PatientDetailsController {
         textArea.setPrefWidth(400);
         textArea.setPrefHeight(300);
         
-        VBox vbox = new VBox(textArea);
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.getStyleClass().add("modern-scroll-pane");
+        scrollPane.setContent(textArea);
+        
+        VBox vbox = new VBox(scrollPane);
+        vbox.setPrefHeight(400);
+        vbox.setPrefWidth(500);
+        
         alert.getDialogPane().setContent(vbox);
+        alert.getDialogPane().getStyleClass().add("scrollable-dialog");
         
         alert.showAndWait();
     }
@@ -468,7 +532,24 @@ public class PatientDetailsController {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setHeaderText(null);
-        alert.setContentText(content);
+        
+        // For longer error messages, use a scrollable text area
+        TextArea textArea = new TextArea(content);
+        textArea.setEditable(false);
+        textArea.setWrapText(true);
+        
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setContent(textArea);
+        scrollPane.getStyleClass().add("modern-scroll-pane");
+        scrollPane.setMaxHeight(300);
+        
+        VBox vbox = new VBox(scrollPane);
+        vbox.setPrefWidth(400);
+        
+        alert.getDialogPane().setContent(vbox);
+        alert.getDialogPane().getStyleClass().add("scrollable-dialog");
+        
         alert.showAndWait();
     }
     

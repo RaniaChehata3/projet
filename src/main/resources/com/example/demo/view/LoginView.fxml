@@ -128,6 +128,15 @@
                     </HBox>
                 </VBox>
                 
+                <!-- Database Connection Test Section -->
+                <VBox styleClass="demo-section">
+                    <Label styleClass="demo-label" text="Database Connection" />
+                    <HBox alignment="CENTER">
+                        <Button fx:id="testConnectionButton" text="Test Database Connection" 
+                                styleClass="demo-button" onAction="#testDatabaseConnection" />
+                    </HBox>
+                </VBox>
+                
                 <!-- Loading Spinner (initially hidden) -->
                 <StackPane fx:id="loadingSpinner" visible="false" managed="false">
                     <StackPane styleClass="auth-spinner, spinner-animate" />

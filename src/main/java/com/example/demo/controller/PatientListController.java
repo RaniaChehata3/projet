@@ -1,192 +1,379 @@
 package com.example.demo.controller;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
+import com.example.demo.database.PatientDAO;
+import com.example.demo.model.Patient;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.Callback;
+
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Controller for the Doctor's Patient List view
  */
 public class PatientListController {
 
-    @FXML
-    private TextField searchField;
+    @FXML private TextField searchField;
+    @FXML private ComboBox<String> filterComboBox;
+    @FXML private ComboBox<String> sortComboBox;
+    @FXML private TableView<Patient> patientsTable;
+    @FXML private TableColumn<Patient, String> idColumn;
+    @FXML private TableColumn<Patient, String> nameColumn;
+    @FXML private TableColumn<Patient, String> ageColumn;
+    @FXML private TableColumn<Patient, String> genderColumn;
+    @FXML private TableColumn<Patient, String> contactColumn;
+    @FXML private TableColumn<Patient, String> emailColumn;
+    @FXML private TableColumn<Patient, String> lastVisitColumn;
+    @FXML private TableColumn<Patient, String> statusColumn;
+    @FXML private TableColumn<Patient, Void> actionsColumn;
+    @FXML private Label totalPatientsLabel;
+    @FXML private Pagination patientsPagination;
     
-    @FXML
-    private ComboBox<String> filterComboBox;
-    
-    @FXML
-    private TableView<Patient> patientsTable;
-    
-    @FXML
-    private TableColumn<Patient, String> idColumn;
-    
-    @FXML
-    private TableColumn<Patient, String> nameColumn;
-    
-    @FXML
-    private TableColumn<Patient, Integer> ageColumn;
-    
-    @FXML
-    private TableColumn<Patient, String> genderColumn;
-    
-    @FXML
-    private TableColumn<Patient, String> contactColumn;
-    
-    @FXML
-    private TableColumn<Patient, String> lastVisitColumn;
-    
-    @FXML
-    private TableColumn<Patient, String> statusColumn;
-    
-    @FXML
-    private TableColumn<Patient, Button> actionsColumn;
-    
-    @FXML
-    private Label totalPatientsLabel;
-    
-    @FXML
-    private Pagination patientsPagination;
-    
+    private final PatientDAO patientDAO = PatientDAO.getInstance();
     private ObservableList<Patient> patientsList = FXCollections.observableArrayList();
+    private static final int ITEMS_PER_PAGE = 10;
+    private String currentSearchTerm = "";
+    private String currentFilterValue = "All";
+    private String currentSortValue = "Name (A-Z)";
     
     /**
      * Initialize the controller
      */
     @FXML
     public void initialize() {
-        // Initialize the filter dropdown
+        // Initialize filter combo box
         filterComboBox.setItems(FXCollections.observableArrayList(
-            "All Patients", "Recent Visits", "Upcoming Appointments", "Active", "Inactive"
+            "All", "Active", "Inactive"
         ));
-        filterComboBox.getSelectionModel().selectFirst();
+        filterComboBox.setValue("All");
+        filterComboBox.setOnAction(e -> refreshPatientList());
         
-        // Set up table columns
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        ageColumn.setCellValueFactory(new PropertyValueFactory<>("age"));
-        genderColumn.setCellValueFactory(new PropertyValueFactory<>("gender"));
-        contactColumn.setCellValueFactory(new PropertyValueFactory<>("contact"));
-        lastVisitColumn.setCellValueFactory(new PropertyValueFactory<>("lastVisit"));
-        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        // Initialize sort combo box
+        sortComboBox.setItems(FXCollections.observableArrayList(
+            "Name (A-Z)", "Name (Z-A)", "ID (Asc)", "ID (Desc)", "Most Recent", "Oldest"
+        ));
+        sortComboBox.setValue("Name (A-Z)");
+        sortComboBox.setOnAction(e -> refreshPatientList());
         
-        // Configure actions column with buttons
-        actionsColumn.setCellFactory(col -> {
-            TableCell<Patient, Button> cell = new TableCell<>() {
-                private final Button viewButton = new Button("View");
-                
-                {
-                    viewButton.getStyleClass().add("action-button");
-                    viewButton.setOnAction(event -> {
-                        Patient patient = getTableView().getItems().get(getIndex());
-                        handleViewPatient(patient);
-                    });
-                }
-                
-                @Override
-                protected void updateItem(Button item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(viewButton);
-                    }
-                }
-            };
-            return cell;
+        // Initialize columns
+        idColumn.setCellValueFactory(cellData -> 
+            new SimpleStringProperty(String.valueOf(cellData.getValue().getPatientId())));
+            
+        nameColumn.setCellValueFactory(cellData -> 
+            new SimpleStringProperty(cellData.getValue().getFirstName() + " " + cellData.getValue().getLastName()));
+            
+        ageColumn.setCellValueFactory(cellData -> 
+            new SimpleStringProperty(String.valueOf(cellData.getValue().getAge())));
+            
+        genderColumn.setCellValueFactory(cellData -> 
+            new SimpleStringProperty(cellData.getValue().getGender()));
+            
+        contactColumn.setCellValueFactory(cellData -> 
+            new SimpleStringProperty(cellData.getValue().getPhoneNumber()));
+            
+        emailColumn.setCellValueFactory(cellData -> 
+            new SimpleStringProperty(cellData.getValue().getEmail()));
+            
+        lastVisitColumn.setCellValueFactory(cellData -> {
+            // This would normally be fetched from the medical records
+            // For now, displaying registration date instead
+            LocalDate date = cellData.getValue().getRegistrationDate();
+            if (date != null) {
+                return new SimpleStringProperty(date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            }
+            return new SimpleStringProperty("N/A");
         });
+            
+        statusColumn.setCellValueFactory(cellData -> 
+            new SimpleStringProperty(cellData.getValue().isActive() ? "Active" : "Inactive"));
         
-        // Load sample data
-        loadSamplePatients();
-        
-        // Set up table with data
-        patientsTable.setItems(patientsList);
-        
-        // Update total patients count
-        totalPatientsLabel.setText(String.valueOf(patientsList.size()));
-        
-        // Set up search functionality
-        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-            // This would typically filter the patients based on the search text
-            // For now, just show an info alert
-            if (!oldValue.equals(newValue) && !newValue.isEmpty()) {
-                System.out.println("Searching for: " + newValue);
+        // Set up the actions column with buttons
+        actionsColumn.setCellFactory(param -> new TableCell<>() {
+            private final Button viewButton = new Button("View");
+            private final Button editButton = new Button("Edit");
+            private final Button deleteButton = new Button("Delete");
+            private final HBox buttonBox = new HBox(5);
+            
+            {
+                // Style buttons
+                viewButton.getStyleClass().addAll("action-button", "view-button", "small-button");
+                editButton.getStyleClass().addAll("action-button", "edit-button", "small-button");
+                deleteButton.getStyleClass().addAll("action-button", "delete-button", "small-button");
+                
+                // Set button icons
+                Text viewIcon = new Text("👁");
+                viewIcon.getStyleClass().add("menu-icon");
+                viewButton.setGraphic(viewIcon);
+                
+                Text editIcon = new Text("✏");
+                editIcon.getStyleClass().add("menu-icon");
+                editButton.setGraphic(editIcon);
+                
+                Text deleteIcon = new Text("🗑");
+                deleteIcon.getStyleClass().add("menu-icon");
+                deleteButton.setGraphic(deleteIcon);
+                
+                // Set up button actions
+                viewButton.setOnAction(event -> {
+                    Patient patient = getTableView().getItems().get(getIndex());
+                    handleViewPatient(patient);
+                });
+                
+                editButton.setOnAction(event -> {
+                    Patient patient = getTableView().getItems().get(getIndex());
+                    handleEditPatient(patient);
+                });
+                
+                deleteButton.setOnAction(event -> {
+                    Patient patient = getTableView().getItems().get(getIndex());
+                    handleDeletePatient(patient);
+                });
+                
+                buttonBox.getChildren().addAll(viewButton, editButton, deleteButton);
+                buttonBox.setAlignment(Pos.CENTER);
+            }
+            
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(buttonBox);
+                }
             }
         });
+        
+        // Set up pagination
+        patientsPagination.setPageFactory(this::createPage);
+        
+        // Load initial data
+        refreshPatientList();
     }
     
     /**
-     * Load sample patient data
+     * Creates a page for the pagination control
      */
-    private void loadSamplePatients() {
-        patientsList.add(new Patient("P-10001", "John Smith", 42, "Male", "555-123-4567", "2023-05-15", "Active"));
-        patientsList.add(new Patient("P-10002", "Sarah Johnson", 35, "Female", "555-987-6543", "2023-05-10", "Active"));
-        patientsList.add(new Patient("P-10003", "Robert Garcia", 67, "Male", "555-456-7890", "2023-04-28", "Active"));
-        patientsList.add(new Patient("P-10004", "Lisa Chen", 29, "Female", "555-789-0123", "2023-04-15", "Active"));
-        patientsList.add(new Patient("P-10005", "David Wilson", 51, "Male", "555-234-5678", "2023-03-22", "Inactive"));
-        patientsList.add(new Patient("P-10006", "Maria Rodriguez", 48, "Female", "555-345-6789", "2023-03-10", "Active"));
-        patientsList.add(new Patient("P-10007", "Thomas Lee", 73, "Male", "555-456-7891", "2023-02-18", "Inactive"));
-        patientsList.add(new Patient("P-10008", "Jennifer Taylor", 31, "Female", "555-567-8901", "2023-02-05", "Active"));
+    private TableView<Patient> createPage(int pageIndex) {
+        int fromIndex = pageIndex * ITEMS_PER_PAGE;
+        int toIndex = Math.min(fromIndex + ITEMS_PER_PAGE, patientsList.size());
+        
+        if (fromIndex >= patientsList.size()) {
+            return new TableView<>();
+        }
+        
+        patientsTable.setItems(FXCollections.observableArrayList(
+            patientsList.subList(fromIndex, toIndex)
+        ));
+        
+        return patientsTable;
     }
     
     /**
-     * Handle the "Add Patient" button click
+     * Refreshes the patient list based on current search, filter, and sort settings
+     */
+    private void refreshPatientList() {
+        // Get current values
+        currentSearchTerm = searchField.getText().trim();
+        currentFilterValue = filterComboBox.getValue();
+        currentSortValue = sortComboBox.getValue();
+        
+        // Load patients
+        List<Patient> patients;
+        
+        if (!currentSearchTerm.isEmpty()) {
+            // Search based on the search term
+            patients = patientDAO.searchPatients(currentSearchTerm);
+        } else {
+            // Get all patients
+            patients = patientDAO.getAllPatients();
+        }
+        
+        // Filter patients
+        if (!"All".equals(currentFilterValue)) {
+            boolean activeFilter = "Active".equals(currentFilterValue);
+            patients.removeIf(patient -> patient.isActive() != activeFilter);
+        }
+        
+        // Sort patients based on selected option
+        patients.sort((p1, p2) -> {
+            switch (currentSortValue) {
+                case "Name (A-Z)":
+                    return p1.getLastName().compareToIgnoreCase(p2.getLastName());
+                case "Name (Z-A)":
+                    return p2.getLastName().compareToIgnoreCase(p1.getLastName());
+                case "ID (Asc)":
+                    return Integer.compare(p1.getPatientId(), p2.getPatientId());
+                case "ID (Desc)":
+                    return Integer.compare(p2.getPatientId(), p1.getPatientId());
+                case "Most Recent":
+                    return p2.getRegistrationDate().compareTo(p1.getRegistrationDate());
+                case "Oldest":
+                    return p1.getRegistrationDate().compareTo(p2.getRegistrationDate());
+                default:
+                    return 0;
+            }
+        });
+        
+        // Update observable list
+        patientsList.setAll(patients);
+        
+        // Update pagination
+        int pageCount = (int) Math.ceil((double) patientsList.size() / ITEMS_PER_PAGE);
+        patientsPagination.setPageCount(Math.max(1, pageCount));
+        patientsPagination.setCurrentPageIndex(0);
+        
+        // Update total patients label
+        totalPatientsLabel.setText(String.valueOf(patientsList.size()));
+        
+        // Set first page
+        createPage(0);
+    }
+    
+    /**
+     * Handle search button action
+     */
+    @FXML
+    private void handleSearch() {
+        refreshPatientList();
+    }
+    
+    /**
+     * Handle reset search button action
+     */
+    @FXML
+    private void handleResetSearch() {
+        searchField.clear();
+        filterComboBox.setValue("All");
+        sortComboBox.setValue("Name (A-Z)");
+        refreshPatientList();
+    }
+    
+    /**
+     * Handle add patient button action
      */
     @FXML
     private void handleAddPatient() {
-        showNotImplementedAlert("Add New Patient");
+        openPatientForm(null, PatientFormController.FormMode.ADD, patient -> refreshPatientList());
     }
     
     /**
-     * Handle viewing a specific patient
+     * Handle edit patient button action
+     */
+    private void handleEditPatient(Patient patient) {
+        openPatientForm(patient, PatientFormController.FormMode.EDIT, p -> refreshPatientList());
+    }
+    
+    /**
+     * Handle view patient button action
      */
     private void handleViewPatient(Patient patient) {
-        showNotImplementedAlert("View Patient Details");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/demo/view/PatientDetailsView.fxml"));
+            Parent root = loader.load();
+            
+            PatientDetailsController controller = loader.getController();
+            controller.setPatient(patient);
+            
+            Stage stage = new Stage();
+            stage.setTitle("Patient Details - " + patient.getFirstName() + " " + patient.getLastName());
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorAlert("Error", "Could not open patient details view.\nError: " + e.getMessage());
+        }
     }
     
     /**
-     * Show an alert for features that are not yet implemented
+     * Handle delete patient button action
      */
-    private void showNotImplementedAlert(String feature) {
+    private void handleDeletePatient(Patient patient) {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmation.setTitle("Delete Patient");
+        confirmation.setHeaderText("Delete Patient Record");
+        confirmation.setContentText("Are you sure you want to delete " + patient.getFirstName() + " " + patient.getLastName() + "?\nThis action cannot be undone.");
+        
+        Optional<ButtonType> result = confirmation.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            boolean success = patientDAO.deletePatient(patient.getPatientId());
+            if (success) {
+                refreshPatientList();
+                showSuccessAlert("Success", "Patient deleted successfully");
+            } else {
+                showErrorAlert("Error", "Failed to delete patient");
+            }
+        }
+    }
+    
+    /**
+     * Opens the patient form for adding or editing a patient
+     */
+    private void openPatientForm(Patient patient, PatientFormController.FormMode mode, Consumer<Patient> onSuccess) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/demo/view/PatientFormView.fxml"));
+            Parent root = loader.load();
+            
+            PatientFormController controller = loader.getController();
+            controller.setMode(mode);
+            
+            if (patient != null) {
+                controller.setPatient(patient);
+            }
+            
+            // Set callback for when patient is saved
+            controller.setOnSaveCallback(onSuccess);
+            
+            Stage stage = new Stage();
+            stage.setTitle(mode == PatientFormController.FormMode.ADD ? "Add New Patient" : "Edit Patient");
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorAlert("Error", "Could not open patient form.\nError: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Shows a success alert
+     */
+    private void showSuccessAlert(String header, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Feature Not Implemented");
-        alert.setHeaderText(feature);
-        alert.setContentText("This feature is not implemented in the current version.");
+        alert.setTitle("Success");
+        alert.setHeaderText(header);
+        alert.setContentText(content);
         alert.showAndWait();
     }
     
     /**
-     * Class representing a Patient
+     * Shows an error alert
      */
-    public static class Patient {
-        private final String id;
-        private final String name;
-        private final int age;
-        private final String gender;
-        private final String contact;
-        private final String lastVisit;
-        private final String status;
-        
-        public Patient(String id, String name, int age, String gender, String contact, String lastVisit, String status) {
-            this.id = id;
-            this.name = name;
-            this.age = age;
-            this.gender = gender;
-            this.contact = contact;
-            this.lastVisit = lastVisit;
-            this.status = status;
-        }
-        
-        public String getId() { return id; }
-        public String getName() { return name; }
-        public int getAge() { return age; }
-        public String getGender() { return gender; }
-        public String getContact() { return contact; }
-        public String getLastVisit() { return lastVisit; }
-        public String getStatus() { return status; }
+    private void showErrorAlert(String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 } 

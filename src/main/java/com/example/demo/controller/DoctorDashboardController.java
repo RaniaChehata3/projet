@@ -115,30 +115,40 @@ public class DoctorDashboardController extends ModernDashboardController {
         clockTimeline.play();
     }
 
+    /**
+     * Set up role-specific navigation and UI elements.
+     */
     @Override
     protected void setupRoleSpecificUI() {
-        // Set up navigation menu items specific to Doctor role
-        ObservableList<String> menuItems = FXCollections.observableArrayList(
-            "Dashboard",
-            "My Patients",
-            "Appointments",
-            "Medical Records",
-            "Prescriptions",
-            "Lab Results",
-            "Messages"
+        // Add navigation items based on the doctor role
+        ObservableList<String> navItems = FXCollections.observableArrayList(
+                "Dashboard",
+                "Patient Management",
+                "Appointments",
+                "Medical Records",
+                "Prescriptions",
+                "Lab Results",
+                "Messages",
+                "Reports"
         );
         
-        navigationList.setItems(menuItems);
-        navigationList.getSelectionModel().select(0);
+        navigationList.setItems(navItems);
         
-        // Set up navigation map for doctor-specific views
+        // Map navigation items to their FXML views
         navigationMap.put("Dashboard", "/com/example/demo/view/DoctorDashboardView.fxml");
-        navigationMap.put("My Patients", "/com/example/demo/view/PatientListView.fxml");
-        navigationMap.put("Appointments", "/com/example/demo/view/DoctorAppointmentsView.fxml");
+        navigationMap.put("Patient Management", "/com/example/demo/view/PatientManagementView.fxml");
+        navigationMap.put("Appointments", "/com/example/demo/view/PlaceholderView.fxml");
         navigationMap.put("Medical Records", "/com/example/demo/view/MedicalRecordsView.fxml");
         navigationMap.put("Prescriptions", "/com/example/demo/view/PrescriptionsView.fxml");
-        navigationMap.put("Lab Results", "/com/example/demo/view/LabResultsView.fxml");
+        navigationMap.put("Lab Results", "/com/example/demo/view/PlaceholderView.fxml");
         navigationMap.put("Messages", "/com/example/demo/view/MessagesView.fxml");
+        navigationMap.put("Reports", "/com/example/demo/view/PlaceholderView.fxml");
+        
+        // Select Dashboard by default
+        navigationList.getSelectionModel().select(0);
+        
+        // Setup notification badges if there are notifications
+        notificationBadge.setVisible(true);
     }
 
     /**
@@ -377,12 +387,12 @@ public class DoctorDashboardController extends ModernDashboardController {
     }
     
     /**
-     * Handle patient lookup button click
+     * Called when the Patient Lookup button is clicked
      */
     @FXML
     private void handlePatientLookup() {
-        // This would open the patient search screen
-        showNotImplementedAlert("Patient Lookup");
+        // Navigate to the Patient Management view
+        navigationList.getSelectionModel().select("Patient Management");
     }
     
     /**

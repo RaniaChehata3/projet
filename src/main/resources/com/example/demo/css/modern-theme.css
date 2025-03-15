@@ -607,6 +607,95 @@
     -fx-text-fill: -fx-error-color;
 }
 
+/* Custom scrollable dialog */
+.scrollable-dialog {
+    -fx-background-color: -fx-white;
+    -fx-background-radius: 8px;
+}
+
+.scrollable-dialog .dialog-pane {
+    -fx-background-color: -fx-white;
+    -fx-padding: 0;
+    -fx-background-radius: 8px;
+}
+
+.scrollable-dialog .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-fit-to-width: true;
+}
+
+.scrollable-dialog .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scrollable-dialog .content-area {
+    -fx-padding: 20px;
+}
+
+.modern-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.modern-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.modern-scroll-pane > .scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-padding: 0 0 0 2;
+}
+
+.modern-scroll-pane > .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-padding: 2 0 0 0;
+}
+
+.modern-scroll-pane > .scroll-bar > .thumb {
+    -fx-background-color: rgba(0, 0, 0, 0.2);
+    -fx-background-radius: 10;
+    -fx-background-insets: 2, 0, 0;
+}
+
+.modern-scroll-pane > .scroll-bar > .thumb:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+}
+
+.modern-scroll-pane > .scroll-bar > .thumb:pressed {
+    -fx-background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modern-scroll-pane > .scroll-bar > .track {
+    -fx-background-color: transparent;
+}
+
+.modern-scroll-pane > .scroll-bar > .track-background {
+    -fx-background-color: transparent;
+}
+
+.modern-scroll-pane > .scroll-bar > .increment-button,
+.modern-scroll-pane > .scroll-bar > .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 5;
+}
+
+.modern-scroll-pane > .scroll-bar > .increment-button > .increment-arrow,
+.modern-scroll-pane > .scroll-bar > .decrement-button > .decrement-arrow {
+    -fx-background-color: rgba(0, 0, 0, 0.2);
+}
+
+.modern-scroll-pane > .scroll-bar > .increment-button:hover > .increment-arrow,
+.modern-scroll-pane > .scroll-bar > .decrement-button:hover > .decrement-arrow {
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+}
+
+.modern-scroll-pane > .corner {
+    -fx-background-color: transparent;
+}
+
 /* Custom dialog styling for Medical Records */
 .custom-dialog {
     -fx-background-color: -fx-white;

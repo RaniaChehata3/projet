@@ -125,9 +125,10 @@
                                     <TableColumn fx:id="dateColumn" text="Date" prefWidth="120"/>
                                     <TableColumn fx:id="typeColumn" text="Type" prefWidth="120"/>
                                     <TableColumn fx:id="doctorColumn" text="Doctor" prefWidth="150"/>
-                                    <TableColumn fx:id="notesColumn" text="Notes" prefWidth="250"/>
                                     <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
-                                    <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
+                                    <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="250"/>
+                                    <TableColumn fx:id="notesColumn" text="Notes" prefWidth="250"/>
+
                                 </columns>
                                 <placeholder>
                                     <Label text="No medical records found" styleClass="placeholder-label"/>

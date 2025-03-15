@@ -17,159 +17,167 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="800.0" prefWidth="700.0" stylesheets="@../css/styles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.demo.controller.PatientFormController">
+<AnchorPane prefHeight="700.0" prefWidth="700.0" stylesheets="@../css/modern-theme.css, @../css/fonts.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.demo.controller.PatientFormController">
    <children>
-      <VBox layoutX="10.0" layoutY="10.0" prefHeight="800.0" prefWidth="700.0" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <VBox layoutX="10.0" layoutY="10.0" prefHeight="700.0" prefWidth="700.0" spacing="15.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <Label fx:id="titleLabel" styleClass="page-title" text="Add New Patient">
-               <font>
-                  <Font name="System Bold" size="24.0" />
-               </font>
-               <VBox.margin>
-                  <Insets bottom="10.0" />
-               </VBox.margin>
-            </Label>
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="dashboard-header">
+               <Label fx:id="titleLabel" styleClass="dashboard-title" text="Add New Patient">
+                  <font>
+                     <Font name="System Bold" size="24.0" />
+                  </font>
+               </Label>
+               <padding>
+                  <Insets bottom="10.0" left="20.0" right="20.0" top="20.0"/>
+               </padding>
+            </HBox>
             <Separator prefWidth="200.0" />
-            <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="700.0" prefWidth="680.0" VBox.vgrow="ALWAYS">
+            <ScrollPane fitToWidth="true" styleClass="modern-scroll-pane" VBox.vgrow="ALWAYS">
                <content>
-                  <VBox spacing="20.0">
-                     <children>
+                  <VBox spacing="20.0" styleClass="content-container">
+                     <padding>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="10.0" />
+                     </padding>
+
+                     <!-- Personal Information Section -->
+                     <VBox spacing="15.0" styleClass="form-section">
+                        <Label text="Personal Information" styleClass="section-header"/>
                         <GridPane hgap="15.0" vgap="15.0">
                            <columnConstraints>
-                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="250.0" minWidth="10.0" prefWidth="150.0" />
-                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="500.0" minWidth="10.0" prefWidth="500.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="200.0" minWidth="150.0" prefWidth="180.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="500.0" minWidth="10.0" prefWidth="450.0" />
                            </columnConstraints>
                            <rowConstraints>
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
                            </rowConstraints>
                            <children>
-                              <Label styleClass="form-label" text="Full Name *" />
-                              <Label styleClass="form-label" text="Date of Birth *" GridPane.rowIndex="1" />
-                              <Label styleClass="form-label" text="Gender *" GridPane.rowIndex="2" />
-                              <Label styleClass="form-label" text="Phone Number *" GridPane.rowIndex="3" />
-                              <Label styleClass="form-label" text="Email" GridPane.rowIndex="4" />
-                              <Label styleClass="form-label" text="Address" GridPane.rowIndex="5" />
-                              <Label styleClass="form-label" text="City" GridPane.rowIndex="6" />
-                              <Label styleClass="form-label" text="Blood Type" GridPane.rowIndex="7" />
-                              <Label styleClass="form-label" text="Insurance Provider" GridPane.rowIndex="8" />
-                              <Label styleClass="form-label" text="Insurance Number" GridPane.rowIndex="9" />
-                              <Label styleClass="form-label" text="Emergency Contact" GridPane.rowIndex="10" />
-                              <Label styleClass="form-label" text="Emergency Phone" GridPane.rowIndex="11" />
-                              <Label styleClass="form-label" text="Status" GridPane.rowIndex="12" />
-                              <TextField fx:id="fullNameField" promptText="Enter full name" GridPane.columnIndex="1" />
-                              <DatePicker fx:id="dateOfBirthPicker" prefHeight="25.0" prefWidth="400.0" promptText="Select date of birth" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                              <ComboBox fx:id="genderComboBox" prefHeight="25.0" prefWidth="400.0" promptText="Select gender" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                              <TextField fx:id="phoneField" promptText="Enter phone number" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                              <TextField fx:id="emailField" promptText="Enter email address" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                              <TextField fx:id="addressField" promptText="Enter address" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-                              <TextField fx:id="cityField" promptText="Enter city" GridPane.columnIndex="1" GridPane.rowIndex="6" />
-                              <TextField fx:id="bloodTypeField" promptText="Enter blood type (e.g., A+, O-)" GridPane.columnIndex="1" GridPane.rowIndex="7" />
-                              <TextField fx:id="insuranceProviderField" promptText="Enter insurance provider" GridPane.columnIndex="1" GridPane.rowIndex="8" />
-                              <TextField fx:id="insuranceNumberField" promptText="Enter insurance number" GridPane.columnIndex="1" GridPane.rowIndex="9" />
-                              <TextField fx:id="emergencyContactField" promptText="Enter emergency contact name" GridPane.columnIndex="1" GridPane.rowIndex="10" />
-                              <TextField fx:id="emergencyPhoneField" promptText="Enter emergency contact phone" GridPane.columnIndex="1" GridPane.rowIndex="11" />
-                              <ComboBox fx:id="statusComboBox" prefHeight="25.0" prefWidth="400.0" promptText="Select status" GridPane.columnIndex="1" GridPane.rowIndex="12" />
+                              <Label text="Full Name:" styleClass="form-label" />
+                              <TextField fx:id="fullNameField" promptText="Enter full name" styleClass="modern-text-field" GridPane.columnIndex="1" />
+                              
+                              <Label text="Date of Birth:" styleClass="form-label" GridPane.rowIndex="1" />
+                              <DatePicker fx:id="dateOfBirthPicker" promptText="Select date of birth" styleClass="modern-date-picker" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              
+                              <Label text="Gender:" styleClass="form-label" GridPane.rowIndex="2" />
+                              <ComboBox fx:id="genderComboBox" prefWidth="200.0" promptText="Select gender" styleClass="modern-combo-box" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              
+                              <Label text="Phone Number:" styleClass="form-label" GridPane.rowIndex="3" />
+                              <TextField fx:id="phoneField" promptText="Enter phone number" styleClass="modern-text-field" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                              
+                              <Label text="Email Address:" styleClass="form-label" GridPane.rowIndex="4" />
+                              <TextField fx:id="emailField" promptText="Enter email address" styleClass="modern-text-field" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                            </children>
-                           <padding>
-                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                           </padding>
                         </GridPane>
-                        
-                        <!-- Medical Information Section -->
-                        <VBox spacing="10.0">
+                     </VBox>
+                     
+                     <!-- Address Information Section -->
+                     <VBox spacing="15.0" styleClass="form-section">
+                        <Label text="Address Information" styleClass="section-header"/>
+                        <GridPane hgap="15.0" vgap="15.0">
+                           <columnConstraints>
+                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="200.0" minWidth="150.0" prefWidth="180.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="500.0" minWidth="10.0" prefWidth="450.0" />
+                           </columnConstraints>
+                           <rowConstraints>
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                           </rowConstraints>
                            <children>
-                              <Separator prefWidth="200.0" />
-                              <Label styleClass="section-header" text="Medical Information">
-                                 <font>
-                                    <Font name="System Bold" size="16.0" />
-                                 </font>
-                              </Label>
+                              <Label text="Address:" styleClass="form-label" />
+                              <TextField fx:id="addressField" promptText="Enter full address" styleClass="modern-text-field" GridPane.columnIndex="1" />
                               
-                              <GridPane hgap="15.0" vgap="15.0">
-                                 <columnConstraints>
-                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="250.0" minWidth="10.0" prefWidth="150.0" />
-                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="500.0" minWidth="10.0" prefWidth="500.0" />
-                                 </columnConstraints>
-                                 <rowConstraints>
-                                    <RowConstraints minHeight="10.0" prefHeight="100.0" vgrow="SOMETIMES" />
-                                    <RowConstraints minHeight="10.0" prefHeight="80.0" vgrow="SOMETIMES" />
-                                 </rowConstraints>
-                                 <children>
-                                    <Label styleClass="form-label" text="Medical History" />
-                                    <TextArea fx:id="medicalHistoryArea" prefHeight="100.0" prefWidth="400.0" promptText="Enter patient's medical history" wrapText="true" GridPane.columnIndex="1" />
-                                    
-                                    <Label styleClass="form-label" text="Allergies" GridPane.rowIndex="1" />
-                                    <TextArea fx:id="allergiesArea" prefHeight="80.0" prefWidth="400.0" promptText="Enter patient's allergies" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                 </children>
-                              </GridPane>
-                              
-                              <!-- Medical Records Buttons - Only visible in EDIT mode -->
-                              <VBox fx:id="medicalRecordButtonsBox" spacing="10.0">
-                                 <children>
-                                    <Separator prefWidth="200.0" />
-                                    <Label styleClass="section-header" text="Medical Records Actions">
-                                       <font>
-                                          <Font name="System Bold" size="16.0" />
-                                       </font>
-                                    </Label>
-                                    <HBox spacing="10.0">
-                                       <children>
-                                          <Button fx:id="viewMedicalRecordsButton" mnemonicParsing="false" onAction="#onViewMedicalRecords" styleClass="button-primary" text="View Full Medical Records" />
-                                          <Button mnemonicParsing="false" onAction="#onAddMedicalRecord" styleClass="button-success" text="Add New Medical Record" />
-                                       </children>
-                                       <padding>
-                                          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                       </padding>
-                                    </HBox>
-                                 </children>
-                              </VBox>
+                              <Label text="City:" styleClass="form-label" GridPane.rowIndex="1" />
+                              <TextField fx:id="cityField" promptText="Enter city" styleClass="modern-text-field" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                            </children>
-                           <padding>
-                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                           </padding>
-                        </VBox>
-                        
-                        <Label text="* Required fields" textFill="#757575">
-                           <font>
-                              <Font name="System Italic" size="12.0" />
-                           </font>
-                           <VBox.margin>
-                              <Insets left="10.0" />
-                           </VBox.margin>
-                        </Label>
-                     </children>
-                     <padding>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                     </padding>
+                        </GridPane>
+                     </VBox>
+                     
+                     <!-- Medical Information Section -->
+                     <VBox spacing="15.0" styleClass="form-section">
+                        <Label text="Medical Information" styleClass="section-header"/>
+                        <GridPane hgap="15.0" vgap="15.0">
+                           <columnConstraints>
+                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="200.0" minWidth="150.0" prefWidth="180.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="500.0" minWidth="10.0" prefWidth="450.0" />
+                           </columnConstraints>
+                           <rowConstraints>
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="100.0" prefHeight="100.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="100.0" prefHeight="100.0" vgrow="SOMETIMES" />
+                           </rowConstraints>
+                           <children>
+                              <Label text="Blood Type:" styleClass="form-label" />
+                              <TextField fx:id="bloodTypeField" promptText="Enter blood type" styleClass="modern-text-field" GridPane.columnIndex="1" />
+                              
+                              <Label text="Insurance Provider:" styleClass="form-label" GridPane.rowIndex="1" />
+                              <TextField fx:id="insuranceProviderField" promptText="Enter insurance provider" styleClass="modern-text-field" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              
+                              <Label text="Insurance Number:" styleClass="form-label" GridPane.rowIndex="2" />
+                              <TextField fx:id="insuranceNumberField" promptText="Enter insurance number" styleClass="modern-text-field" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              
+                              <Label text="Medical History:" styleClass="form-label" GridPane.rowIndex="3" />
+                              <TextArea fx:id="medicalHistoryArea" prefHeight="100.0" promptText="Enter relevant medical history" styleClass="modern-text-area" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                              
+                              <Label text="Allergies:" styleClass="form-label" GridPane.rowIndex="4" />
+                              <TextArea fx:id="allergiesArea" prefHeight="100.0" promptText="Enter known allergies" styleClass="modern-text-area" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                           </children>
+                        </GridPane>
+                     </VBox>
+                     
+                     <!-- Emergency Contact Section -->
+                     <VBox spacing="15.0" styleClass="form-section">
+                        <Label text="Emergency Contact" styleClass="section-header"/>
+                        <GridPane hgap="15.0" vgap="15.0">
+                           <columnConstraints>
+                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="200.0" minWidth="150.0" prefWidth="180.0" />
+                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="500.0" minWidth="10.0" prefWidth="450.0" />
+                           </columnConstraints>
+                           <rowConstraints>
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="30.0" prefHeight="40.0" vgrow="SOMETIMES" />
+                           </rowConstraints>
+                           <children>
+                              <Label text="Contact Name:" styleClass="form-label" />
+                              <TextField fx:id="emergencyContactField" promptText="Enter emergency contact name" styleClass="modern-text-field" GridPane.columnIndex="1" />
+                              
+                              <Label text="Contact Phone:" styleClass="form-label" GridPane.rowIndex="1" />
+                              <TextField fx:id="emergencyPhoneField" promptText="Enter emergency contact phone" styleClass="modern-text-field" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              
+                              <Label text="Status:" styleClass="form-label" GridPane.rowIndex="2" />
+                              <ComboBox fx:id="statusComboBox" prefWidth="200.0" promptText="Select status" styleClass="modern-combo-box" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                           </children>
+                        </GridPane>
+                     </VBox>
+                     
+                     <!-- Medical Records Section -->
+                     <VBox fx:id="medicalRecordButtonsBox" spacing="15.0" styleClass="form-section">
+                        <Label text="Medical Records" styleClass="section-header"/>
+                        <HBox spacing="15.0">
+                           <Button fx:id="viewMedicalRecordsButton" onAction="#onViewMedicalRecords" text="View Medical Records" styleClass="action-button, primary, enhanced-button" />
+                           <Button onAction="#onAddMedicalRecord" text="Add Medical Record" styleClass="action-button, outline-button, enhanced-button" />
+                        </HBox>
+                     </VBox>
                   </VBox>
                </content>
             </ScrollPane>
-            <Separator prefWidth="200.0" />
-            <HBox alignment="CENTER_RIGHT" spacing="10.0">
-               <children>
-                  <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#onCancel" styleClass="button-secondary" text="Cancel" />
-                  <Button fx:id="saveButton" defaultButton="true" mnemonicParsing="false" onAction="#onSave" styleClass="button-primary" text="Add Patient" />
-               </children>
+            
+            <!-- Action Buttons -->
+            <HBox alignment="CENTER_RIGHT" spacing="15.0" styleClass="action-buttons-container">
                <padding>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                  <Insets bottom="20.0" left="20.0" right="20.0" top="10.0" />
                </padding>
+               <children>
+                  <Button fx:id="cancelButton" onAction="#onCancel" text="Cancel" styleClass="action-button, cancel-button" />
+                  <Button fx:id="saveButton" onAction="#onSave" text="Save" styleClass="action-button, primary, enhanced-button" />
+               </children>
             </HBox>
          </children>
-         <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-         </padding>
       </VBox>
    </children>
 </AnchorPane> 

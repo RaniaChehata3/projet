@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.org/fxml"
+      fx:controller="com.example.demo.controller.MedicalRecordFormController"
+      spacing="15" alignment="CENTER" styleClass="content-container"
+      prefWidth="600" prefHeight="700">
+
+    <stylesheets>
+        <URL value="@../styles.css" />
+    </stylesheets>
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20" />
+    </padding>
+
+    <!-- Form Title -->
+    <HBox alignment="CENTER">
+        <Label fx:id="formTitleLabel" styleClass="form-title" text="Add Medical Record" />
+    </HBox>
+
+    <!-- Form Content in a ScrollPane for better usability -->
+    <ScrollPane fitToWidth="true" prefHeight="600" styleClass="transparent-scroll-pane">
+        <VBox spacing="15">
+            <!-- Patient Information Section (readonly when opened from patient details) -->
+            <TitledPane text="Patient Information" expanded="true">
+                <VBox spacing="10">
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Patient" />
+                            <ComboBox fx:id="patientComboBox" promptText="Select Patient" maxWidth="Infinity" />
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Patient ID" />
+                            <TextField fx:id="patientIdField" promptText="ID" editable="false" />
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+
+            <!-- Visit Information Section -->
+            <TitledPane text="Visit Information" expanded="true">
+                <VBox spacing="10">
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Visit Date *" />
+                            <DatePicker fx:id="visitDatePicker" promptText="Select Date" maxWidth="Infinity" />
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Visit Type *" />
+                            <ComboBox fx:id="visitTypeComboBox" promptText="Select Type" maxWidth="Infinity" />
+                        </VBox>
+                    </HBox>
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Doctor *" />
+                            <ComboBox fx:id="doctorComboBox" promptText="Select Doctor" maxWidth="Infinity" />
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Record Type *" />
+                            <ComboBox fx:id="recordTypeComboBox" promptText="Select Record Type" maxWidth="Infinity" />
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+
+            <!-- Medical Information Section -->
+            <TitledPane text="Medical Information" expanded="true">
+                <VBox spacing="10">
+                    <VBox spacing="5">
+                        <Label text="Symptoms" />
+                        <TextArea fx:id="symptomsTextArea" promptText="Enter patient symptoms" wrapText="true" prefHeight="60" />
+                    </VBox>
+                    <VBox spacing="5">
+                        <Label text="Diagnosis *" />
+                        <TextArea fx:id="diagnosisTextArea" promptText="Enter diagnosis" wrapText="true" prefHeight="60" />
+                    </VBox>
+                    <VBox spacing="5">
+                        <Label text="Diagnosis Codes" />
+                        <TextField fx:id="diagnosisCodesField" promptText="Enter diagnosis codes (e.g., ICD-10)" />
+                    </VBox>
+                    <VBox spacing="5">
+                        <Label text="Treatment" />
+                        <TextArea fx:id="treatmentTextArea" promptText="Enter treatment details" wrapText="true" prefHeight="60" />
+                    </VBox>
+                </VBox>
+            </TitledPane>
+
+            <!-- Additional Information Section -->
+            <TitledPane text="Additional Information" expanded="true">
+                <VBox spacing="10">
+                    <VBox spacing="5">
+                        <Label text="Notes" />
+                        <TextArea fx:id="notesTextArea" promptText="Enter additional notes" wrapText="true" prefHeight="60" />
+                    </VBox>
+                    <HBox spacing="15">
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Status *" />
+                            <ComboBox fx:id="statusComboBox" promptText="Select Status" maxWidth="Infinity" />
+                        </VBox>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Follow-up Date" />
+                            <DatePicker fx:id="followUpDatePicker" promptText="Select Date" maxWidth="Infinity" />
+                        </VBox>
+                    </HBox>
+                    <VBox spacing="5">
+                        <Label text="Attachments" />
+                        <HBox spacing="10">
+                            <TextField fx:id="attachmentsField" promptText="No files selected" HBox.hgrow="ALWAYS" editable="false" />
+                            <Button fx:id="browseButton" text="Browse" onAction="#onBrowse" />
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </TitledPane>
+
+            <!-- Required fields note -->
+            <Label text="* Required fields" styleClass="required-fields-note" />
+        </VBox>
+    </ScrollPane>
+
+    <!-- Action Buttons -->
+    <HBox spacing="10" alignment="CENTER">
+        <Button fx:id="saveButton" text="Save" styleClass="primary-button" onAction="#onSave" prefWidth="100" />
+        <Button fx:id="cancelButton" text="Cancel" styleClass="secondary-button" onAction="#onCancel" prefWidth="100" />
+    </HBox>
+</VBox> 

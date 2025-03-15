@@ -4,49 +4,94 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
+<?import javafx.scene.shape.*?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.org/fxml"
       fx:controller="com.example.demo.controller.PatientListController"
-      spacing="20" styleClass="content-container">
+      spacing="20" styleClass="content-container"
+      stylesheets="@../css/modern-theme.css, @../css/fonts.css">
     
     <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
+        <Insets top="30" right="30" bottom="30" left="30"/>
     </padding>
     
-    <Label text="My Patients" styleClass="section-title"/>
-    <Label text="View and manage your patient list" styleClass="section-subtitle"/>
+    <!-- Header Section -->
+    <HBox alignment="CENTER_LEFT" spacing="15" styleClass="dashboard-header">
+        <VBox>
+            <Label text="Patient Management" styleClass="dashboard-title"/>
+            <Label text="View and manage your patients" styleClass="section-subtitle"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS" />
+        <Button text="Add New Patient" styleClass="action-button, primary, enhanced-button" onAction="#handleAddPatient">
+            <graphic>
+                <Text styleClass="menu-icon">➕</Text>
+            </graphic>
+        </Button>
+    </HBox>
     
     <!-- Search and Filter Section -->
-    <HBox spacing="15" alignment="CENTER_LEFT">
-        <TextField fx:id="searchField" promptText="Search patients..." prefWidth="300"/>
-        <ComboBox fx:id="filterComboBox" promptText="Filter by..." prefWidth="200"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Add Patient" styleClass="action-button, primary" onAction="#handleAddPatient"/>
-    </HBox>
+    <VBox styleClass="dashboard-card, search-card" spacing="20">
+        <padding><Insets top="25" right="25" bottom="25" left="25"/></padding>
+        
+        <HBox alignment="CENTER_LEFT" spacing="15">
+            <Text styleClass="menu-icon, section-icon">🔍</Text>
+            <Label text="Search Patients" styleClass="card-section-title"/>
+        </HBox>
+        
+        <HBox spacing="15" alignment="CENTER_LEFT">
+            <TextField fx:id="searchField" promptText="Search by name, ID, phone..." prefWidth="350" styleClass="modern-text-field"/>
+            <ComboBox fx:id="filterComboBox" promptText="Filter by status" prefWidth="200" styleClass="modern-combo-box"/>
+            <ComboBox fx:id="sortComboBox" promptText="Sort by..." prefWidth="200" styleClass="modern-combo-box"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Search" styleClass="action-button, primary, enhanced-button" onAction="#handleSearch">
+                <graphic>
+                    <Text styleClass="menu-icon">🔍</Text>
+                </graphic>
+            </Button>
+            <Button text="Reset" styleClass="action-button, outline-button, enhanced-button" onAction="#handleResetSearch">
+                <graphic>
+                    <Text styleClass="menu-icon">↺</Text>
+                </graphic>
+            </Button>
+        </HBox>
+    </VBox>
     
     <!-- Patients Table -->
-    <TableView fx:id="patientsTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="idColumn" text="Patient ID" prefWidth="100"/>
-            <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
-            <TableColumn fx:id="ageColumn" text="Age" prefWidth="80"/>
-            <TableColumn fx:id="genderColumn" text="Gender" prefWidth="100"/>
-            <TableColumn fx:id="contactColumn" text="Contact" prefWidth="150"/>
-            <TableColumn fx:id="lastVisitColumn" text="Last Visit" prefWidth="150"/>
-            <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
-            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
-        </columns>
-        <placeholder>
-            <Label text="No patients found" />
-        </placeholder>
-    </TableView>
-    
-    <!-- Bottom Information -->
-    <HBox alignment="CENTER_LEFT" spacing="10">
-        <Label text="Total Patients:"/>
-        <Label fx:id="totalPatientsLabel" text="0" styleClass="bold-text"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Pagination fx:id="patientsPagination" pageCount="1" maxPageIndicatorCount="5" prefHeight="40"/>
-    </HBox>
+    <VBox styleClass="dashboard-card, patients-card" spacing="20" VBox.vgrow="ALWAYS">
+        <padding><Insets top="25" right="25" bottom="25" left="25"/></padding>
+        
+        <HBox alignment="CENTER_LEFT" spacing="15">
+            <Text styleClass="menu-icon, section-icon">👥</Text>
+            <Label text="Patient List" styleClass="card-section-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Total Patients:"/>
+            <Label fx:id="totalPatientsLabel" text="0" styleClass="bold-text, stat-number"/>
+        </HBox>
+        
+        <TableView fx:id="patientsTable" styleClass="enhanced-table" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="idColumn" text="ID" prefWidth="80"/>
+                <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
+                <TableColumn fx:id="ageColumn" text="Age" prefWidth="60"/>
+                <TableColumn fx:id="genderColumn" text="Gender" prefWidth="80"/>
+                <TableColumn fx:id="contactColumn" text="Contact" prefWidth="120"/>
+                <TableColumn fx:id="emailColumn" text="Email" prefWidth="180"/>
+                <TableColumn fx:id="lastVisitColumn" text="Last Visit" prefWidth="120"/>
+                <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+                <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="280"/>
+            </columns>
+            <placeholder>
+                <VBox alignment="CENTER" spacing="15" styleClass="enhanced-placeholder">
+                    <Text styleClass="menu-icon, placeholder-icon">👥</Text>
+                    <Label text="No patients found" styleClass="placeholder-label"/>
+                </VBox>
+            </placeholder>
+        </TableView>
+        
+        <!-- Pagination -->
+        <HBox alignment="CENTER">
+            <Pagination fx:id="patientsPagination" pageCount="1" maxPageIndicatorCount="5" styleClass="modern-pagination"/>
+        </HBox>
+    </VBox>
 </VBox> 

@@ -82,8 +82,18 @@ public class DatabaseConnection {
      * @throws SQLException If a database access error occurs.
      */
     private Connection createConnection() throws SQLException {
+        System.out.println("Attempting to connect to database: " + url);
         try {
-            return DriverManager.getConnection(url, username, password);
+            Connection conn = DriverManager.getConnection(url, username, password);
+            System.out.println("Database connection successful");
+            
+            // Test if the connection is actually working by executing a simple query
+            try (java.sql.Statement stmt = conn.createStatement()) {
+                stmt.execute("SELECT 1");
+                System.out.println("Database connection verified with test query");
+            }
+            
+            return conn;
         } catch (SQLException e) {
             System.err.println("Database connection error: " + e.getMessage());
             System.err.println("Connection URL: " + url);
@@ -94,7 +104,8 @@ public class DatabaseConnection {
             } else if (e.getMessage().contains("Access denied")) {
                 System.err.println("Username or password is incorrect.");
             } else if (e.getMessage().contains("Unknown database")) {
-                System.err.println("Database 'sahacare' does not exist. Make sure to run setup_database.bat first.");
+                System.err.println("Database 'sahacare' does not exist. Make sure the database has been created.");
+                System.err.println("You may need to run the SQL script first: c:\\Users\\MSI\\Downloads\\sahacare (4).sql");
             }
             
             throw e;
@@ -505,5 +516,84 @@ public class DatabaseConnection {
             e.printStackTrace();
             return null;
         }
+    }
+
+    /**
+     * Test the database connection and report detailed information.
+     * This method is intended to be called from a menu option to help users troubleshoot
+     * database connection issues.
+     * 
+     * @return A message with database connection status details
+     */
+    public String testAndReportConnection() {
+        StringBuilder report = new StringBuilder();
+        report.append("Database Connection Report\n");
+        report.append("------------------------\n");
+        report.append("JDBC URL: ").append(url).append("\n");
+        report.append("Username: ").append(username).append("\n");
+        report.append("Password: ").append(password.replaceAll(".", "*")).append("\n\n");
+        
+        try {
+            // Try to connect to the database server
+            System.out.println("Testing database connection...");
+            report.append("Attempting to connect to database server...\n");
+            
+            Connection conn = createConnection();
+            report.append("Connection successful!\n\n");
+            
+            // Check if required tables exist
+            report.append("Checking for required tables...\n");
+            boolean hasPatients = false;
+            boolean hasUsers = false;
+            
+            try (java.sql.Statement stmt = conn.createStatement()) {
+                try {
+                    stmt.execute("SELECT 1 FROM patients LIMIT 1");
+                    hasPatients = true;
+                    report.append("- 'patients' table exists\n");
+                } catch (SQLException e) {
+                    report.append("- 'patients' table NOT FOUND: ").append(e.getMessage()).append("\n");
+                }
+                
+                try {
+                    stmt.execute("SELECT 1 FROM users LIMIT 1");
+                    hasUsers = true;
+                    report.append("- 'users' table exists\n");
+                } catch (SQLException e) {
+                    report.append("- 'users' table NOT FOUND: ").append(e.getMessage()).append("\n");
+                }
+            }
+            
+            // Report overall database status
+            report.append("\nDatabase Status: ");
+            if (hasPatients && hasUsers) {
+                report.append("READY\n");
+                report.append("The database is properly configured and all required tables exist.\n");
+            } else {
+                report.append("NEEDS INITIALIZATION\n");
+                report.append("The database is missing required tables. Please run the SQL initialization script:\n");
+                report.append("c:\\Users\\MSI\\Downloads\\sahacare (4).sql\n");
+            }
+            
+            conn.close();
+        } catch (SQLException e) {
+            report.append("Connection FAILED: ").append(e.getMessage()).append("\n\n");
+            report.append("Troubleshooting steps:\n");
+            
+            if (e.getMessage().contains("Communications link failure")) {
+                report.append("1. Make sure MySQL server is running\n");
+                report.append("2. Check that the server is running on the default port (3306)\n");
+                report.append("3. Make sure the MySQL service is started in Windows Services\n");
+            } else if (e.getMessage().contains("Access denied")) {
+                report.append("1. Verify the username and password are correct\n");
+                report.append("2. Make sure the user has permissions to access the database\n");
+            } else if (e.getMessage().contains("Unknown database")) {
+                report.append("1. The 'sahacare' database does not exist\n");
+                report.append("2. Run the SQL script to create the database:\n");
+                report.append("   c:\\Users\\MSI\\Downloads\\sahacare (4).sql\n");
+            }
+        }
+        
+        return report.toString();
     }
 }

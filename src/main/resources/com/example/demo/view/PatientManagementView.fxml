@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.chart.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.demo.controller.PatientManagementController"
+            styleClass="modern-container"
+            stylesheets="@../css/modern-theme.css, @../css/fonts.css">
+    
+    <!-- Top Section with header and actions -->
+    <top>
+        <VBox spacing="20">
+            <padding>
+                <Insets top="30" right="30" bottom="10" left="30"/>
+            </padding>
+            
+            <!-- Header with title and buttons -->
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="dashboard-header">
+                <VBox>
+                    <Label text="Patient Management" styleClass="dashboard-title"/>
+                    <Label text="View, add, and manage patients" styleClass="section-subtitle"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button text="Add New Patient" styleClass="action-button, primary, enhanced-button" onAction="#handleAddPatient">
+                    <graphic>
+                        <Text styleClass="menu-icon">➕</Text>
+                    </graphic>
+                </Button>
+                <Button text="Import Patients" styleClass="action-button, outline-button, enhanced-button" onAction="#handleImportPatients">
+                    <graphic>
+                        <Text styleClass="menu-icon">📥</Text>
+                    </graphic>
+                </Button>
+                <Button text="Export Patients" styleClass="action-button, outline-button, enhanced-button" onAction="#handleExportPatients">
+                    <graphic>
+                        <Text styleClass="menu-icon">📤</Text>
+                    </graphic>
+                </Button>
+            </HBox>
+            
+            <!-- Stats Cards Row -->
+            <GridPane hgap="20" vgap="20">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="25"/>
+                    <ColumnConstraints percentWidth="25"/>
+                    <ColumnConstraints percentWidth="25"/>
+                    <ColumnConstraints percentWidth="25"/>
+                </columnConstraints>
+                
+                <VBox styleClass="stat-card, appointments-card, animated-hover" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="15">
+                        <StackPane styleClass="stat-icon-container, total-patients-icon">
+                            <Text styleClass="menu-icon, stat-icon">👥</Text>
+                        </StackPane>
+                        <VBox spacing="5">
+                            <Label text="Total Patients" styleClass="stat-label"/>
+                            <Label fx:id="totalPatientsCountLabel" text="0" styleClass="stat-number"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+                
+                <VBox styleClass="stat-card, active-patients-card, animated-hover" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="15">
+                        <StackPane styleClass="stat-icon-container, active-patients-icon">
+                            <Text styleClass="menu-icon, stat-icon">✓</Text>
+                        </StackPane>
+                        <VBox spacing="5">
+                            <Label text="Active Patients" styleClass="stat-label"/>
+                            <Label fx:id="activePatientsCountLabel" text="0" styleClass="stat-number"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+                
+                <VBox styleClass="stat-card, recent-patients-card, animated-hover" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="15">
+                        <StackPane styleClass="stat-icon-container, new-patients-icon">
+                            <Text styleClass="menu-icon, stat-icon">🆕</Text>
+                        </StackPane>
+                        <VBox spacing="5">
+                            <Label text="New This Month" styleClass="stat-label"/>
+                            <Label fx:id="newPatientsCountLabel" text="0" styleClass="stat-number"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+                
+                <VBox styleClass="stat-card, males-females-card, animated-hover" GridPane.columnIndex="3" GridPane.rowIndex="0">
+                    <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+                    <HBox alignment="CENTER_LEFT" spacing="15">
+                        <StackPane styleClass="stat-icon-container, gender-stats-icon">
+                            <Text styleClass="menu-icon, stat-icon">⚤</Text>
+                        </StackPane>
+                        <VBox spacing="5">
+                            <Label text="Gender Distribution" styleClass="stat-label"/>
+                            <HBox spacing="15" alignment="CENTER_LEFT">
+                                <Label fx:id="maleCountLabel" text="M: 0" styleClass="gender-stat"/>
+                                <Label fx:id="femaleCountLabel" text="F: 0" styleClass="gender-stat"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </GridPane>
+        </VBox>
+    </top>
+    
+    <!-- Center content with patient list -->
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="modern-scroll-pane">
+            <VBox spacing="20">
+                <padding>
+                    <Insets top="0" right="30" bottom="30" left="30"/>
+                </padding>
+                
+                <!-- Search and Filter Bar -->
+                <VBox styleClass="dashboard-card, search-card" spacing="20">
+                    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Text styleClass="menu-icon, section-icon">🔍</Text>
+                        <Label text="Search and Filter" styleClass="card-section-title"/>
+                    </HBox>
+                    
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <TextField fx:id="searchField" promptText="Search by name, ID, phone..." prefWidth="350" styleClass="modern-text-field"/>
+                        <ComboBox fx:id="filterComboBox" promptText="Status" prefWidth="150" styleClass="modern-combo-box"/>
+                        <ComboBox fx:id="sortComboBox" promptText="Sort by" prefWidth="150" styleClass="modern-combo-box"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Search" styleClass="action-button, primary, enhanced-button" onAction="#handleSearch">
+                            <graphic>
+                                <Text styleClass="menu-icon">🔍</Text>
+                            </graphic>
+                        </Button>
+                        <Button text="Reset" styleClass="action-button, outline-button, enhanced-button" onAction="#handleResetSearch">
+                            <graphic>
+                                <Text styleClass="menu-icon">↺</Text>
+                            </graphic>
+                        </Button>
+                    </HBox>
+                </VBox>
+                
+                <!-- Patient Table -->
+                <VBox styleClass="dashboard-card, patients-table-card" spacing="15" VBox.vgrow="ALWAYS">
+                    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Text styleClass="menu-icon, section-icon">👥</Text>
+                        <Label text="Patient Records" styleClass="card-section-title"/>
+                        <Label fx:id="resultsCountLabel" text="(0 results)" styleClass="results-count"/>
+                    </HBox>
+                    
+                    <TableView fx:id="patientsTable" styleClass="enhanced-table" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="idColumn" text="ID" prefWidth="60"/>
+                            <TableColumn fx:id="nameColumn" text="Name" prefWidth="180"/>
+                            <TableColumn fx:id="ageColumn" text="Age" prefWidth="60"/>
+                            <TableColumn fx:id="genderColumn" text="Gender" prefWidth="80"/>
+                            <TableColumn fx:id="phoneColumn" text="Phone" prefWidth="120"/>
+                            <TableColumn fx:id="emailColumn" text="Email" prefWidth="180"/>
+                            <TableColumn fx:id="lastVisitColumn" text="Last Visit" prefWidth="100"/>
+                            <TableColumn fx:id="statusColumn" text="Status" prefWidth="80"/>
+                            <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="270"/>
+                        </columns>
+                        <placeholder>
+                            <VBox alignment="CENTER" spacing="15" styleClass="enhanced-placeholder">
+                                <Text styleClass="menu-icon, placeholder-icon">👥</Text>
+                                <Label text="No patients found" styleClass="placeholder-label"/>
+                            </VBox>
+                        </placeholder>
+                    </TableView>
+                    
+                    <!-- Pagination -->
+                    <HBox alignment="CENTER">
+                        <Pagination fx:id="patientsPagination" pageCount="1" maxPageIndicatorCount="5" styleClass="modern-pagination"/>
+                    </HBox>
+                </VBox>
+                
+                <!-- Patient Demographics Chart -->
+                <VBox styleClass="dashboard-card, chart-card" VBox.vgrow="NEVER">
+                    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                    <VBox spacing="15">
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Text styleClass="menu-icon, section-icon">📊</Text>
+                            <Label text="Patient Demographics" styleClass="card-section-title"/>
+                            <Region HBox.hgrow="ALWAYS" />
+                            <ComboBox fx:id="chartTypeComboBox" promptText="Chart Type" prefWidth="150" styleClass="modern-combo-box"/>
+                        </HBox>
+                        
+                        <StackPane fx:id="chartContainer" minHeight="250">
+                            <PieChart fx:id="demographicsChart" title="" legendVisible="true" 
+                                    labelsVisible="true" styleClass="enhanced-chart"/>
+                        </StackPane>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane> 

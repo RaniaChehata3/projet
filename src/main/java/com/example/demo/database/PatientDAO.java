@@ -169,59 +169,64 @@ public class PatientDAO {
      */
     public boolean createPatient(Patient patient) {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "INSERT INTO patients (first_name, last_name, date_of_birth, gender, " +
+            String sql = "INSERT INTO patients (full_name, first_name, last_name, date_of_birth, gender, " +
                          "address, phone_number, email, insurance_provider, insurance_number, " +
                          "medical_history, allergies, emergency_contact_name, emergency_contact_phone, " +
-                         "blood_type, registration_date, primary_doctor_id, is_active) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                         "blood_type, registration_date, primary_doctor_id, status, is_active) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                stmt.setString(1, patient.getFirstName());
-                stmt.setString(2, patient.getLastName());
+                stmt.setString(1, patient.getFirstName() + " " + patient.getLastName());
+                stmt.setString(2, patient.getFirstName());
+                stmt.setString(3, patient.getLastName());
                 
                 if (patient.getDateOfBirth() != null) {
-                    stmt.setDate(3, Date.valueOf(patient.getDateOfBirth()));
+                    stmt.setDate(4, Date.valueOf(patient.getDateOfBirth()));
                 } else {
-                    stmt.setNull(3, Types.DATE);
+                    stmt.setNull(4, Types.DATE);
                 }
                 
-                stmt.setString(4, patient.getGender());
-                stmt.setString(5, patient.getAddress());
-                stmt.setString(6, patient.getPhoneNumber());
-                stmt.setString(7, patient.getEmail());
-                stmt.setString(8, patient.getInsuranceProvider());
-                stmt.setString(9, patient.getInsuranceNumber());
-                stmt.setString(10, patient.getMedicalHistory());
-                stmt.setString(11, patient.getAllergies());
-                stmt.setString(12, patient.getEmergencyContactName());
-                stmt.setString(13, patient.getEmergencyContactPhone());
-                stmt.setString(14, patient.getBloodType());
+                stmt.setString(5, patient.getGender());
+                stmt.setString(6, patient.getAddress());
+                stmt.setString(7, patient.getPhoneNumber());
+                stmt.setString(8, patient.getEmail());
+                stmt.setString(9, patient.getInsuranceProvider());
+                stmt.setString(10, patient.getInsuranceNumber());
+                stmt.setString(11, patient.getMedicalHistory());
+                stmt.setString(12, patient.getAllergies());
+                stmt.setString(13, patient.getEmergencyContactName());
+                stmt.setString(14, patient.getEmergencyContactPhone());
+                stmt.setString(15, patient.getBloodType());
                 
                 if (patient.getRegistrationDate() != null) {
-                    stmt.setDate(15, Date.valueOf(patient.getRegistrationDate()));
+                    stmt.setDate(16, Date.valueOf(patient.getRegistrationDate()));
                 } else {
-                    stmt.setDate(15, Date.valueOf(LocalDate.now()));
+                    stmt.setDate(16, Date.valueOf(LocalDate.now()));
                 }
                 
                 if (patient.getPrimaryDoctorId() > 0) {
-                    stmt.setInt(16, patient.getPrimaryDoctorId());
+                    stmt.setInt(17, patient.getPrimaryDoctorId());
                 } else {
-                    stmt.setNull(16, Types.INTEGER);
+                    stmt.setNull(17, Types.INTEGER);
                 }
                 
-                stmt.setBoolean(17, patient.isActive());
+                stmt.setString(18, patient.isActive() ? "Active" : "Inactive");
+                stmt.setBoolean(19, patient.isActive());
                 
                 int affectedRows = stmt.executeUpdate();
                 
                 if (affectedRows == 0) {
+                    System.err.println("Creating patient failed, no rows affected.");
                     return false;
                 }
                 
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         patient.setPatientId(generatedKeys.getInt(1));
+                        System.out.println("Successfully created patient with ID: " + patient.getPatientId());
                         return true;
                     } else {
+                        System.err.println("Creating patient failed, no ID obtained.");
                         return false;
                     }
                 }
@@ -241,40 +246,35 @@ public class PatientDAO {
      */
     public boolean updatePatient(Patient patient) {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "UPDATE patients SET first_name = ?, last_name = ?, date_of_birth = ?, " +
+            String sql = "UPDATE patients SET full_name = ?, first_name = ?, last_name = ?, date_of_birth = ?, " +
                          "gender = ?, address = ?, phone_number = ?, email = ?, " +
                          "insurance_provider = ?, insurance_number = ?, medical_history = ?, " +
                          "allergies = ?, emergency_contact_name = ?, emergency_contact_phone = ?, " +
-                         "blood_type = ?, registration_date = ?, primary_doctor_id = ?, " +
-                         "is_active = ? WHERE patient_id = ?";
+                         "blood_type = ?, primary_doctor_id = ?, " +
+                         "status = ?, is_active = ? WHERE patient_id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, patient.getFirstName());
-                stmt.setString(2, patient.getLastName());
+                stmt.setString(1, patient.getFirstName() + " " + patient.getLastName());
+                stmt.setString(2, patient.getFirstName());
+                stmt.setString(3, patient.getLastName());
                 
                 if (patient.getDateOfBirth() != null) {
-                    stmt.setDate(3, Date.valueOf(patient.getDateOfBirth()));
+                    stmt.setDate(4, Date.valueOf(patient.getDateOfBirth()));
                 } else {
-                    stmt.setNull(3, Types.DATE);
+                    stmt.setNull(4, Types.DATE);
                 }
                 
-                stmt.setString(4, patient.getGender());
-                stmt.setString(5, patient.getAddress());
-                stmt.setString(6, patient.getPhoneNumber());
-                stmt.setString(7, patient.getEmail());
-                stmt.setString(8, patient.getInsuranceProvider());
-                stmt.setString(9, patient.getInsuranceNumber());
-                stmt.setString(10, patient.getMedicalHistory());
-                stmt.setString(11, patient.getAllergies());
-                stmt.setString(12, patient.getEmergencyContactName());
-                stmt.setString(13, patient.getEmergencyContactPhone());
-                stmt.setString(14, patient.getBloodType());
-                
-                if (patient.getRegistrationDate() != null) {
-                    stmt.setDate(15, Date.valueOf(patient.getRegistrationDate()));
-                } else {
-                    stmt.setDate(15, Date.valueOf(LocalDate.now()));
-                }
+                stmt.setString(5, patient.getGender());
+                stmt.setString(6, patient.getAddress());
+                stmt.setString(7, patient.getPhoneNumber());
+                stmt.setString(8, patient.getEmail());
+                stmt.setString(9, patient.getInsuranceProvider());
+                stmt.setString(10, patient.getInsuranceNumber());
+                stmt.setString(11, patient.getMedicalHistory());
+                stmt.setString(12, patient.getAllergies());
+                stmt.setString(13, patient.getEmergencyContactName());
+                stmt.setString(14, patient.getEmergencyContactPhone());
+                stmt.setString(15, patient.getBloodType());
                 
                 if (patient.getPrimaryDoctorId() > 0) {
                     stmt.setInt(16, patient.getPrimaryDoctorId());
@@ -282,12 +282,20 @@ public class PatientDAO {
                     stmt.setNull(16, Types.INTEGER);
                 }
                 
-                stmt.setBoolean(17, patient.isActive());
-                stmt.setInt(18, patient.getPatientId());
+                stmt.setString(17, patient.isActive() ? "Active" : "Inactive");
+                stmt.setBoolean(18, patient.isActive());
+                
+                stmt.setInt(19, patient.getPatientId());
                 
                 int affectedRows = stmt.executeUpdate();
                 
-                return affectedRows > 0;
+                if (affectedRows == 0) {
+                    System.err.println("Updating patient failed, no rows affected. Patient ID: " + patient.getPatientId());
+                    return false;
+                }
+                
+                System.out.println("Successfully updated patient with ID: " + patient.getPatientId());
+                return true;
             }
         } catch (SQLException e) {
             System.err.println("Error updating patient: " + e.getMessage());

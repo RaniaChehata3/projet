@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.HelloApplication;
 import com.example.demo.auth.AuthService;
 import com.example.demo.auth.SessionManager;
+import com.example.demo.database.DatabaseConnection;
 import com.example.demo.model.User;
 import com.example.demo.model.UserRole;
 import com.example.demo.utils.NavigationUtil;
@@ -13,8 +14,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Screen;
@@ -48,6 +52,9 @@ public class LoginController {
 
     @FXML
     private StackPane loadingSpinner;
+    
+    @FXML
+    private Button testConnectionButton;
 
     private final AuthService authService = AuthService.getInstance();
     private final SessionManager sessionManager = SessionManager.getInstance();
@@ -328,5 +335,42 @@ public class LoginController {
             e.printStackTrace();
             showError("Error navigating to registration page: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Test the database connection and display the results in a dialog
+     */
+    @FXML
+    private void testDatabaseConnection(ActionEvent event) {
+        // Show loading spinner
+        showLoading(true);
+        
+        // Use a separate thread to test connection to prevent UI freezing
+        new Thread(() -> {
+            // Get the connection report
+            String report = DatabaseConnection.getInstance().testAndReportConnection();
+            
+            Platform.runLater(() -> {
+                // Hide loading spinner
+                showLoading(false);
+                
+                // Display the report in a dialog
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Database Connection Test");
+                alert.setHeaderText("Database Connection Status");
+                
+                TextArea textArea = new TextArea(report);
+                textArea.setEditable(false);
+                textArea.setWrapText(true);
+                textArea.setPrefWidth(600);
+                textArea.setPrefHeight(400);
+                
+                alert.getDialogPane().setContent(textArea);
+                alert.getDialogPane().setMinWidth(650);
+                alert.getDialogPane().setPrefHeight(450);
+                
+                alert.showAndWait();
+            });
+        }).start();
     }
 } 

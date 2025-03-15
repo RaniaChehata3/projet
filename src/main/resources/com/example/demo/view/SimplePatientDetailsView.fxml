@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane prefHeight="700.0" prefWidth="900.0" stylesheets="@../css/modern-theme.css, @../css/fonts.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.demo.controller.SimplePatientDetailsController">
+   <children>
+      <VBox spacing="20" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox alignment="CENTER_LEFT" spacing="15" styleClass="dashboard-header">
+               <padding>
+                  <Insets top="20" right="25" bottom="15" left="25"/>
+               </padding>
+                  <VBox>
+                  <Label fx:id="patientNameLabel" text="Patient Name" styleClass="dashboard-title"/>
+                  <Label fx:id="patientBasicInfoLabel" text="Age | Gender | ID" styleClass="section-subtitle"/>
+                  </VBox>
+               <Region HBox.hgrow="ALWAYS" />
+               <Button fx:id="addRecordButton" text="Add Medical Record" styleClass="action-button, primary-button" onAction="#onAddRecord">
+                  <graphic>
+                     <Text styleClass="menu-icon">➕</Text>
+                  </graphic>
+               </Button>
+            </HBox>
+            <Separator />
+            <ScrollPane fitToWidth="true" styleClass="modern-scroll-pane" VBox.vgrow="ALWAYS">
+               <content>
+                  <VBox spacing="20">
+                     <padding>
+                        <Insets top="0" right="25" bottom="25" left="25"/>
+                     </padding>
+                     <GridPane hgap="20" vgap="20">
+                        <columnConstraints>
+                           <ColumnConstraints percentWidth="50"/>
+                           <ColumnConstraints percentWidth="50"/>
+                        </columnConstraints>
+                        <rowConstraints>
+                           <RowConstraints/>
+                        </rowConstraints>
+                        <VBox styleClass="dashboard-card, details-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                           <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                           <HBox alignment="CENTER_LEFT" spacing="10">
+                              <Text styleClass="menu-icon, section-icon">👤</Text>
+                              <Label text="Personal Information" styleClass="card-section-title"/>
+                           </HBox>
+                           <Separator>
+                              <VBox.margin>
+                                 <Insets top="10" bottom="15"/>
+                              </VBox.margin>
+                           </Separator>
+                           <GridPane vgap="8" hgap="10">
+                              <columnConstraints>
+                                 <ColumnConstraints prefWidth="120" minWidth="100"/>
+                                 <ColumnConstraints hgrow="ALWAYS"/>
+                              </columnConstraints>
+                              <Label text="Full Name:" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                              <Label fx:id="fullNameValue" text="John Doe" styleClass="detail-value" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                              <Label text="Age:" styleClass="detail-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                              <Label fx:id="ageValue" text="43 years" styleClass="detail-value" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                              <Label text="Gender:" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                              <Label fx:id="genderValue" text="Male" styleClass="detail-value" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                              <Label text="Phone:" styleClass="detail-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                              <Label fx:id="phoneValue" text="(123) 456-7890" styleClass="detail-value" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                              <Label text="Email:" styleClass="detail-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                              <Label fx:id="emailValue" text="john.doe@example.com" styleClass="detail-value" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                              <Label text="Address:" styleClass="detail-label" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                              <Label fx:id="addressValue" text="123 Main St, Anytown" styleClass="detail-value" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                           </GridPane>
+                        </VBox>
+                        <VBox styleClass="dashboard-card, details-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                           <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                           <HBox alignment="CENTER_LEFT" spacing="10">
+                              <Text styleClass="menu-icon, section-icon">🏥</Text>
+                              <Label text="Medical Information" styleClass="card-section-title"/>
+                           </HBox>
+                           <Separator>
+                              <VBox.margin>
+                                 <Insets top="10" bottom="15"/>
+                              </VBox.margin>
+                           </Separator>
+                           <GridPane vgap="8" hgap="10">
+                              <columnConstraints>
+                                 <ColumnConstraints prefWidth="120" minWidth="100"/>
+                                 <ColumnConstraints hgrow="ALWAYS"/>
+                              </columnConstraints>
+                              <Label text="Blood Type:" styleClass="detail-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                              <Label fx:id="bloodTypeValue" text="O+" styleClass="detail-value" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                              <Label text="Status:" styleClass="detail-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                              <Label fx:id="statusValue" text="Active" styleClass="status-badge, status-badge-active" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                              <Label text="Insurance:" styleClass="detail-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                              <Label fx:id="insuranceValue" text="Health Insurance Co." styleClass="detail-value" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                              <Label text="Last Visit:" styleClass="detail-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                              <Label fx:id="lastVisitValue" text="01-01-2023" styleClass="detail-value" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                              <Label text="Records:" styleClass="detail-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                              <Label fx:id="recordsCountValue" text="0" styleClass="detail-value" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                           </GridPane>
+                        </VBox>
+                     </GridPane>
+                     <VBox styleClass="dashboard-card, details-card" spacing="15">
+                        <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                           <Text styleClass="menu-icon, section-icon">📝</Text>
+                           <Label text="Medical Records" styleClass="card-section-title"/>
+                        </HBox>
+                        <Separator>
+                           <VBox.margin>
+                              <Insets top="10" bottom="15"/>
+                           </VBox.margin>
+                        </Separator>
+                        <TableView fx:id="medicalRecordsTable" styleClass="enhanced-table" prefHeight="300">
+                           <columns>
+                              <TableColumn fx:id="recordDateColumn" text="Date" prefWidth="120"/>
+                              <TableColumn fx:id="recordTypeColumn" text="Type" prefWidth="120"/>
+                              <TableColumn fx:id="recordDoctorColumn" text="Doctor" prefWidth="160"/>
+                              <TableColumn fx:id="recordDiagnosisColumn" text="Diagnosis" prefWidth="250"/>
+                              <TableColumn fx:id="recordActionsColumn" text="Actions" prefWidth="120"/>
+                           </columns>
+                           <placeholder>
+                              <VBox alignment="CENTER" spacing="15" styleClass="enhanced-placeholder">
+                                 <Text styleClass="menu-icon, placeholder-icon">📝</Text>
+                                 <Label text="No medical records found" styleClass="placeholder-label"/>
+                              </VBox>
+                           </placeholder>
+                        </TableView>
+                     </VBox>
+                  </VBox>
+               </content>
+            </ScrollPane>
+            <HBox alignment="CENTER_RIGHT" spacing="15" styleClass="action-buttons-container">
+               <padding>
+                  <Insets top="5" right="25" bottom="20" left="25"/>
+               </padding>
+               <Button fx:id="closeButton" text="Close" styleClass="action-button, cancel-button" onAction="#onClose"/>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane> 

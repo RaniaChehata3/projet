@@ -1113,7 +1113,7 @@ public class MedicalRecordsController {
         Dialog<MedicalRecord> dialog = new Dialog<>();
         dialog.setTitle(title);
         dialog.setHeaderText(title);
-        dialog.getDialogPane().getStyleClass().add("custom-dialog");
+        dialog.getDialogPane().getStyleClass().addAll("custom-dialog", "scrollable-dialog");
         dialog.getDialogPane().setPrefWidth(700);
         dialog.getDialogPane().setPrefHeight(600);
         
@@ -1128,6 +1128,12 @@ public class MedicalRecordsController {
         
         // Create basic info tab
         Tab basicInfoTab = new Tab("Basic Information");
+        
+        // Wrap tab content in ScrollPane for better scrolling
+        ScrollPane basicScrollPane = new ScrollPane();
+        basicScrollPane.setFitToWidth(true);
+        basicScrollPane.getStyleClass().add("modern-scroll-pane");
+        
         VBox basicInfoContainer = new VBox(15);
         basicInfoContainer.setPadding(new Insets(20));
         
@@ -1356,7 +1362,9 @@ public class MedicalRecordsController {
             basicGrid
         );
         
-        basicInfoTab.setContent(new ScrollPane(basicInfoContainer));
+        basicScrollPane.setContent(basicInfoContainer);
+        
+        basicInfoTab.setContent(basicScrollPane);
         
         // Create details tab
         Tab detailsTab = new Tab("Clinical Details");
@@ -2077,7 +2085,42 @@ public class MedicalRecordsController {
         
         Button exportButton = new Button("Export");
         exportButton.setPrefWidth(100);
-        exportButton.getStyleClass().addAll("button");
+        exportButton.getStyleClass().addAll("button-primary", "export-dialog-button");
+        exportButton.setOnAction(e -> {
+            dialog.close();
+            // Use the existing file export methods
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Export Records");
+            
+            if (csvOption.isSelected()) {
+                fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+                );
+                fileChooser.setInitialFileName("medical_records_export.csv");
+            } else {
+                fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
+                );
+                fileChooser.setInitialFileName("medical_records_export.pdf");
+            }
+            
+            File file = fileChooser.showSaveDialog(dialog.getOwner());
+            if (file != null) {
+                boolean success = false;
+                if (csvOption.isSelected()) {
+                    success = exportToCsv(file, allRecordsList, includeHeadersOption.isSelected(), includeMetadataOption.isSelected(), includeNotesOption.isSelected());
+                } else {
+                    success = exportToPdf(file, allRecordsList, includeHeadersOption.isSelected(), includeMetadataOption.isSelected(), includeNotesOption.isSelected());
+                }
+                
+                if (success) {
+                    showSuccessMessage("Export Complete", "Records Exported", 
+                        allRecordsList.size() + " records have been exported to " + file.getName());
+                } else {
+                    showErrorMessage("Export Failed", "Failed to export records to " + file.getName());
+                }
+            }
+        });
         
         Button cancelButton = new Button("Cancel");
         cancelButton.setPrefWidth(100);
@@ -2141,106 +2184,6 @@ public class MedicalRecordsController {
             // Hide progress indicator
             progressIndicator.setVisible(false);
             statusLabel.setVisible(false);
-        });
-        
-        exportButton.setOnAction(e -> {
-            // Show progress indicator
-            progressIndicator.setVisible(true);
-            statusLabel.setVisible(true);
-            statusLabel.setText("Preparing export...");
-            
-            // Get export options
-            boolean isCsvFormat = csvOption.isSelected();
-            boolean useCurrentFilters = currentFilterOption.isSelected();
-            String typeFilter = typeFilterCombo.getValue();
-            boolean includeHeaders = includeHeadersOption.isSelected();
-            boolean includeMetadata = includeMetadataOption.isSelected();
-            boolean includeNotes = includeNotesOption.isSelected();
-            
-            // Get records to export based on filters
-            List<MedicalRecord> recordsToExport = getRecordsForExport(useCurrentFilters, typeFilter);
-            
-            if (recordsToExport.isEmpty()) {
-                progressIndicator.setVisible(false);
-                statusLabel.setText("No records match the selected filters.");
-                return;
-            }
-            
-            statusLabel.setText("Exporting " + recordsToExport.size() + " records...");
-            
-            // Configure file chooser
-            FileChooser fileChooser = new FileChooser();
-            if (isCsvFormat) {
-                fileChooser.setTitle("Export Medical Records as CSV");
-            fileChooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("CSV Files", "*.csv")
-                );
-                fileChooser.setInitialFileName("medical_records_export.csv");
-            } else {
-                fileChooser.setTitle("Export Medical Records as PDF");
-                fileChooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
-                );
-                fileChooser.setInitialFileName("medical_records_export.pdf");
-            }
-            
-            // Show save dialog
-            File file = fileChooser.showSaveDialog(dialog.getOwner());
-            
-            if (file != null) {
-                // Perform the export in a background thread
-                Task<Boolean> exportTask = new Task<Boolean>() {
-                    @Override
-                    protected Boolean call() throws Exception {
-                        try {
-                            boolean success;
-                if (isCsvFormat) {
-                    success = exportToCsv(file, recordsToExport, includeHeaders, includeMetadata, includeNotes);
-                } else {
-                    success = exportToPdf(file, recordsToExport, includeHeaders, includeMetadata, includeNotes);
-                }
-                            return success;
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            return false;
-                        }
-                    }
-                };
-                
-                exportTask.setOnSucceeded(event -> {
-                    boolean success = exportTask.getValue();
-                    progressIndicator.setVisible(false);
-                    
-                if (success) {
-                        statusLabel.setText("Export completed successfully!");
-                        
-                        // Show success message and close dialog after delay
-                        Platform.runLater(() -> {
-                            showSuccessMessage("Export Complete", "Records Exported", 
-                                    recordsToExport.size() + " records have been exported to " + file.getName());
-                            
-                            // Close the dialog after 2 seconds
-                            PauseTransition delay = new PauseTransition(Duration.seconds(2));
-                            delay.setOnFinished(e2 -> dialog.close());
-                            delay.play();
-                        });
-                } else {
-                        statusLabel.setText("Export failed. Please try again.");
-                    }
-                });
-                
-                exportTask.setOnFailed(event -> {
-                    progressIndicator.setVisible(false);
-                    statusLabel.setText("Export failed: " + exportTask.getException().getMessage());
-                });
-                
-                // Execute the export task
-                new Thread(exportTask).start();
-            } else {
-                // User cancelled the save dialog
-                progressIndicator.setVisible(false);
-                statusLabel.setVisible(false);
-            }
         });
         
         // Create scene and set it on the dialog
@@ -2691,13 +2634,20 @@ public class MedicalRecordsController {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Welcome to Medical Records");
         dialog.setHeaderText("Enhanced Medical Records Management");
+        dialog.getDialogPane().getStyleClass().addAll("modern-dialog", "scrollable-dialog");
         
         // Create a BorderPane for the content
         BorderPane content = new BorderPane();
-        content.setPadding(new Insets(20));
+        
+        // Create a ScrollPane for scrollable content
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.getStyleClass().add("modern-scroll-pane");
         
         // Create a VBox for the main content
         VBox mainContent = new VBox(15);
+        mainContent.setPadding(new Insets(20));
+        mainContent.getStyleClass().add("content-area");
         
         // Add a welcome message
         Label welcomeLabel = new Label("Welcome to the enhanced Medical Records module!");
@@ -2749,7 +2699,9 @@ public class MedicalRecordsController {
         // Add everything to the main content
         mainContent.getChildren().addAll(welcomeLabel, featuresBox, tipsBox, dontShowAgain);
         
-        content.setCenter(mainContent);
+        // Set up the scrolling structure
+        scrollPane.setContent(mainContent);
+        content.setCenter(scrollPane);
         dialog.getDialogPane().setContent(content);
         
         // Add buttons
@@ -2757,7 +2709,6 @@ public class MedicalRecordsController {
         
         // Set min width
         dialog.getDialogPane().setMinWidth(550);
-        dialog.getDialogPane().getStyleClass().add("modern-dialog");
         
         // Show the dialog
         dialog.showAndWait();
@@ -3184,7 +3135,6 @@ public class MedicalRecordsController {
         
         // Create layout
         BorderPane root = new BorderPane();
-        root.setPadding(new Insets(25));
         root.getStyleClass().add("custom-dialog");
         
         // Create title
@@ -3200,7 +3150,7 @@ public class MedicalRecordsController {
         formatLabel.getStyleClass().add("form-field-label");
         
         VBox headerBox = new VBox(5, titleLabel, formatLabel);
-        headerBox.setPadding(new Insets(0, 0, 15, 0));
+        headerBox.setPadding(new Insets(15, 15, 15, 15));
         
         // Create preview area
         TextArea previewArea = new TextArea();
@@ -3209,19 +3159,58 @@ public class MedicalRecordsController {
         previewArea.setPrefRowCount(20);
         previewArea.getStyleClass().add("export-preview");
         
+        // Create buttons
+        Button closeButton = new Button("Close");
+        closeButton.getStyleClass().add("button-secondary");
+        closeButton.setOnAction(e -> dialog.close());
+        
+        Button exportButton = new Button("Export");
+        exportButton.getStyleClass().add("button-primary");
+        exportButton.setOnAction(e -> {
+            dialog.close();
+            
+            // Show file chooser
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Export Records");
+            
+            if (isCsvFormat) {
+                fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("CSV Files", "*.csv")
+                );
+                fileChooser.setInitialFileName("medical_records_export.csv");
+            } else {
+                fileChooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
+                );
+                fileChooser.setInitialFileName("medical_records_export.pdf");
+            }
+            
+            File file = fileChooser.showSaveDialog(dialog.getOwner());
+            if (file != null) {
+                // Export the records
+                boolean success = false;
+                if (isCsvFormat) {
+                    success = exportToCsv(file, records, includeHeaders, includeMetadata, includeNotes);
+                } else {
+                    success = exportToPdf(file, records, includeHeaders, includeMetadata, includeNotes);
+                }
+                
+                // Show result message
+                if (success) {
+                    showSuccessMessage("Export Complete", "Records Exported", 
+                        records.size() + " records have been exported to " + file.getName());
+                } else {
+                    showErrorMessage("Export Failed", "Failed to export records to " + file.getName());
+                }
+            }
+        });
+        
+        HBox buttons = new HBox(10, exportButton, closeButton);
+        buttons.setAlignment(Pos.CENTER_RIGHT);
+        buttons.setPadding(new Insets(15));
+        
         // Generate preview content
         StringBuilder previewContent = new StringBuilder();
-        
-        if (includeMetadata) {
-            // Add report metadata
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String timestamp = dateFormat.format(new Date());
-            
-            previewContent.append("Export Date: ").append(timestamp).append("\n");
-            previewContent.append("Total Records: ").append(records.size()).append("\n");
-            previewContent.append("Format: ").append(isCsvFormat ? "CSV" : "PDF").append("\n");
-            previewContent.append("\n");
-        }
         
         if (isCsvFormat) {
             // CSV Format
@@ -3286,24 +3275,21 @@ public class MedicalRecordsController {
         
         previewArea.setText(previewContent.toString());
         
-        // Create close button
-        Button closeButton = new Button("Close");
-        closeButton.getStyleClass().add("action-button");
-        closeButton.setPrefWidth(100);
-        closeButton.setOnAction(e -> dialog.close());
-        
-        HBox buttons = new HBox(closeButton);
-        buttons.setAlignment(Pos.CENTER_RIGHT);
-        buttons.setPadding(new Insets(15, 0, 0, 0));
+        // Create a ScrollPane to wrap the preview area for better scrolling
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(previewArea);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.getStyleClass().add("modern-scroll-pane");
         
         // Assemble layout
         root.setTop(headerBox);
-        root.setCenter(previewArea);
+        root.setCenter(scrollPane);
         root.setBottom(buttons);
         
-        // Set scene and show dialog
         Scene scene = new Scene(root);
-        scene.getStylesheets().addAll(recordsTable.getScene().getStylesheets());
+        scene.getStylesheets().add(getClass().getResource("/com/example/demo/css/modern-theme.css").toExternalForm());
+        
         dialog.setScene(scene);
         dialog.showAndWait();
     }
@@ -3405,5 +3391,51 @@ public class MedicalRecordsController {
         
         // Set up add record button
         addRecordButton.setOnAction(e -> handleAddRecord());
+    }
+
+    /**
+     * Filter medical records by specific patient
+     * @param patient The patient to filter records for
+     */
+    public void filterByPatient(Patient patient) {
+        if (patient == null) {
+            return;
+        }
+        
+        // Set patient name in search field to filter records
+        searchField.setText(patient.getFullName());
+        
+        // Apply filters to show only this patient's records
+        Platform.runLater(() -> {
+            // Focus on the patient's records
+            recordsTabPane.getSelectionModel().select(0); // Select the All Records tab
+            
+            // Filter records for this patient
+            filterRecordsByPatient(patient);
+            
+            // Update UI elements to reflect the filtering
+            totalRecordsCount.setText("Patient: " + patient.getFullName());
+        });
+    }
+    
+    /**
+     * Helper method to filter records for a specific patient
+     * @param patient The patient to filter for
+     */
+    private void filterRecordsByPatient(Patient patient) {
+        // This implementation assumes your records filtering logic is elsewhere
+        // If needed, call your existing filtering methods here
+        
+        // For example, you might have a method like:
+        // applyFilters(patient.getPatientId(), null, null, null, null);
+        
+        // For demonstration, we'll just use the search field filter which should be
+        // handled by your existing filtering logic
+        
+        // Ensure your search field handler is triggered
+        if (searchField.getOnKeyPressed() != null) {
+            // Simulate a search action if there's a handler attached
+            searchField.fireEvent(new ActionEvent());
+        }
     }
 } 
