@@ -257,30 +257,45 @@ public class DashboardController {
      */
     @FXML
     public void handleLogout() {
+        // Get the AuthService instance
+        AuthService authService = AuthService.getInstance();
+        
+        // Log out the user
+        authService.logout();
+        
         try {
-            // Log out the user
-            if (authService != null) {
-                authService.logout();
-            }
-            
             // Navigate back to the login screen
             FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("/com/example/demo/view/LoginView.fxml"));
             Parent loginView = loader.load();
             
             // Get current stage
-            Stage stage = (Stage) sidebarMenu.getScene().getWindow();
+            Stage stage = (Stage) appointmentsTable.getScene().getWindow();
             
             // Set up the scene
             Scene scene = new Scene(loginView);
             stage.setScene(scene);
             
-            // Use NavigationUtil for consistent window sizing
+            // Adjust stage size for login view
             NavigationUtil.adjustStageToScreen(stage);
             
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("Error navigating to login view: " + e.getMessage());
+            showErrorAlert("Navigation Error", "Failed to navigate to login screen: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Show error alert with the given title and message
+     * 
+     * @param title The alert title
+     * @param message The alert message
+     */
+    private void showErrorAlert(String title, String message) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
     
     /**

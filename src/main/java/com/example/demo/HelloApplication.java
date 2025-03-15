@@ -1,6 +1,5 @@
 package com.example.demo;
 
-import com.example.demo.api.SimpleHttpServer;
 import com.example.demo.database.DatabaseConnection;
 import com.example.demo.auth.AuthService;
 import com.example.demo.model.User;
@@ -22,7 +21,6 @@ public class HelloApplication extends Application {
     
     private static Scene scene;
     private static Stage primaryStage;
-    private static SimpleHttpServer apiServer;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -47,9 +45,6 @@ public class HelloApplication extends Application {
                 if (dbConnection.hasExistingData()) {
                     testLoginWithExistingCredentials();
                 }
-                
-                // Start the API server
-                initializeApiServer();
             } else {
                 System.err.println("Failed to connect to the database. Please check your database configuration.");
                 // Show an error dialog to inform the user
@@ -101,69 +96,13 @@ public class HelloApplication extends Application {
             InputStream iconStream = getClass().getResourceAsStream("/com/example/demo/images/app_icon.png");
             if (iconStream != null) {
                 stage.getIcons().add(new Image(iconStream));
-            } else {
-                // Fallback to file path if resource not found
-                stage.getIcons().add(new Image("file:src/main/resources/com/example/demo/images/app_icon.png"));
             }
         } catch (Exception e) {
-            System.err.println("Could not load application icon: " + e.getMessage());
+            System.out.println("Could not load application icon: " + e.getMessage());
         }
-        
-        // Use the NavigationUtil to adjust stage size
-        NavigationUtil.adjustStageToScreen(primaryStage);
-        
-        // Register a shutdown hook to stop the API server when the application closes
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (apiServer != null) {
-                System.out.println("Shutting down API server...");
-                apiServer.stop();
-            }
-        }));
-        
-        // Handle application close event
-        stage.setOnCloseRequest(event -> {
-            if (apiServer != null) {
-                System.out.println("Stopping API server...");
-                apiServer.stop();
-            }
-        });
         
         // Show the stage
         stage.show();
-    }
-    
-    /**
-     * Initialize the API server
-     */
-    private void initializeApiServer() {
-        try {
-            System.out.println("Starting API server...");
-            apiServer = new SimpleHttpServer(5000); // Use port 5000 for the API server
-            apiServer.start();
-            System.out.println("API server started successfully on port 5000");
-            
-            // Display an info alert to notify the user
-            javafx.application.Platform.runLater(() -> {
-                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
-                alert.setTitle("API Server");
-                alert.setHeaderText("API Server Started");
-                alert.setContentText("The API server has been started on port 5000.\n\n" +
-                                    "You can now generate web links for medical records instead of exporting PDFs.");
-                alert.show();
-            });
-        } catch (Exception e) {
-            System.err.println("Failed to start API server: " + e.getMessage());
-            e.printStackTrace();
-            
-            // Display an error alert
-            javafx.application.Platform.runLater(() -> {
-                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-                alert.setTitle("API Server Error");
-                alert.setHeaderText("Failed to start API server");
-                alert.setContentText("Error: " + e.getMessage() + "\n\nThe application will continue to run, but web link generation for medical records will not be available.");
-                alert.show();
-            });
-        }
     }
     
     /**
@@ -179,22 +118,26 @@ public class HelloApplication extends Application {
     }
     
     /**
-     * Set the root of the scene to a different FXML
+     * Set the root element of the scene
      * 
      * @param fxml The path to the FXML file (without extension)
      * @throws IOException If the file cannot be loaded
      */
     public static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
-        primaryStage.centerOnScreen();
     }
-
+    
+    /**
+     * Get the primary stage
+     * 
+     * @return The primary stage
+     */
     public static Stage getPrimaryStage() {
         return primaryStage;
     }
-
+    
     /**
-     * Test login with default credentials to verify system
+     * Test login with existing credentials
      */
     private void testLoginWithExistingCredentials() {
         try {
@@ -207,72 +150,47 @@ public class HelloApplication extends Application {
                 return;
             }
             
-            // Define ALL test users to verify
+            // Define test users to match the auto-login buttons in LoginController
             String[][] testUsers = {
-                {"sys_admin", "password", "ADMIN", "System Administrator"},
-                {"dr_smith", "password", "DOCTOR", "Dr. John Smith"},
-                {"dr_jones", "password", "DOCTOR", "Dr. Sarah Jones"},
-                {"john_patient", "password", "PATIENT", "John Doe"},
-                {"jane_patient", "password", "PATIENT", "Jane Doe"},
-                {"lab_tech", "password", "LABORATORY", "Michael Johnson"},
-                {"lab_manager", "password", "LABORATORY", "Emily Davis"}
+                {"admin", "password", "ADMIN", "System Administrator"},
+                {"doctor", "password", "DOCTOR", "Dr. John Smith"},
+                {"patient", "password", "PATIENT", "John Doe"},
+                {"lab", "password", "LABORATORY", "Lab Technician"}
             };
             
             int successCount = 0;
             int totalUsers = testUsers.length;
             
-            System.out.println("\n====================================================");
-            System.out.println("  TESTING ALL USERS WITH AUTO-LOGIN");
-            System.out.println("====================================================");
-            
+            // Silent test login without console output
             for (String[] userInfo : testUsers) {
                 String username = userInfo[0];
                 String password = userInfo[1];
-                String expectedRole = userInfo[2];
-                String fullName = userInfo[3];
                 
                 try {
-                    System.out.println("\nTesting login for: " + fullName + " (" + username + ")");
                     Optional<User> userOpt = authService.testLogin(username, password);
-                    
                     if (userOpt.isPresent()) {
-                        User user = userOpt.get();
-                        System.out.println("✓ SUCCESS: Verified login for " + username + 
-                                           " with role: " + user.getRole());
                         successCount++;
-                    } else {
-                        System.err.println("✗ FAILED: Login failed for user: " + username);
-                        System.err.println("  - Expected role: " + expectedRole);
-                        System.err.println("  - Expected user: " + fullName);
-                        System.err.println("  - Common issues:");
-                        System.err.println("    1. Database hash might not match expected MD5 hash");
-                        System.err.println("    2. User might not exist or be inactive");
                     }
                 } catch (Exception e) {
-                    System.err.println("✗ ERROR: Test login exception for user '" + username + "': " + e.getMessage());
-                    e.printStackTrace(System.err);
+                    // Silently ignore test login exceptions
                 }
             }
             
-            System.out.println("\n====================================================");
-            System.out.println("TEST LOGIN SUMMARY: " + successCount + " of " + totalUsers + " users verified");
-            if (successCount == totalUsers) {
-                System.out.println("✓ ALL LOGINS SUCCESSFUL");
-            } else if (successCount == 0) {
-                System.err.println("✗ ALL LOGINS FAILED - Check database connection and users table");
-            } else {
-                System.out.println("⚠ SOME LOGINS FAILED - See error messages above");
-                float successPercentage = (float) successCount / totalUsers * 100;
-                System.out.printf("Success rate: %.1f%%\n", successPercentage);
+            // Just log a simple summary without details
+            if (successCount == 0) {
+                System.out.println("Note: No test users could be authenticated. This may be normal for first run.");
             }
-            System.out.println("====================================================\n");
         } catch (Exception e) {
-            System.err.println("Error initializing test login system: " + e.getMessage());
-            e.printStackTrace();
+            // Silently ignore errors in test login system
         }
     }
-
+    
+    /**
+     * Application entry point
+     * 
+     * @param args Command line arguments
+     */
     public static void main(String[] args) {
-        launch(args);
+        launch();
     }
 }

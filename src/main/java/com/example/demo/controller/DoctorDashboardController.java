@@ -25,11 +25,19 @@ import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.geometry.Pos;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 
 /**
  * Controller for the Doctor Dashboard view.
@@ -42,6 +50,8 @@ public class DoctorDashboardController extends ModernDashboardController {
     @FXML private Label todayAppointmentsLabel;
     @FXML private Label patientsTodayLabel;
     @FXML private Label pendingResultsLabel;
+    @FXML private Label currentDateLabel;
+    @FXML private Label currentTimeLabel;
     @FXML private TableView<Appointment> appointmentsTable;
     @FXML private TableColumn<Appointment, String> appointmentTimeColumn;
     @FXML private TableColumn<Appointment, String> appointmentPatientColumn;
@@ -54,10 +64,12 @@ public class DoctorDashboardController extends ModernDashboardController {
     @FXML private TableColumn<PatientNote, String> noteTimeColumn;
     @FXML private TableColumn<PatientNote, String> notePatientColumn;
     @FXML private TableColumn<PatientNote, String> noteSummaryColumn;
+    @FXML private TableColumn<PatientNote, HBox> noteActionsColumn;
 
     private Optional<User> currentUser;
     private ObservableList<Appointment> appointmentsList = FXCollections.observableArrayList();
     private ObservableList<PatientNote> recentNotesList = FXCollections.observableArrayList();
+    private Timeline clockTimeline;
 
     /**
      * Initialize the controller.
@@ -65,6 +77,9 @@ public class DoctorDashboardController extends ModernDashboardController {
     @FXML
     public void initialize() {
         super.initialize();
+        
+        // Initialize date and time display
+        initializeDateTimeDisplay();
         
         // Initialize tables
         initializeTables();
@@ -81,6 +96,23 @@ public class DoctorDashboardController extends ModernDashboardController {
         } else {
             welcomeLabel.setText("Welcome");
         }
+    }
+    
+    /**
+     * Initialize the date and time display with auto-update
+     */
+    private void initializeDateTimeDisplay() {
+        // Set current date
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy");
+        currentDateLabel.setText(LocalDate.now().format(dateFormatter));
+        
+        // Set up a timeline to update the time every second
+        clockTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+            currentTimeLabel.setText(LocalTime.now().format(timeFormatter));
+        }));
+        clockTimeline.setCycleCount(Animation.INDEFINITE);
+        clockTimeline.play();
     }
 
     @Override
@@ -122,16 +154,56 @@ public class DoctorDashboardController extends ModernDashboardController {
             new SimpleStringProperty(cellData.getValue().getPurpose()));
         appointmentStatusColumn.setCellValueFactory(cellData -> 
             new SimpleStringProperty(cellData.getValue().getStatus()));
+        
+        // Style the status column
+        appointmentStatusColumn.setCellFactory(column -> {
+            return new TableCell<Appointment, String>() {
+                @Override
+                protected void updateItem(String status, boolean empty) {
+                    super.updateItem(status, empty);
+                    
+                    if (empty || status == null) {
+                        setText(null);
+                        setGraphic(null);
+                        getStyleClass().removeAll("status-badge-completed", "status-badge-pending", "status-badge-cancelled");
+                    } else {
+                        setText(status);
+                        getStyleClass().removeAll("status-badge-completed", "status-badge-pending", "status-badge-cancelled");
+                        
+                        if (status.equalsIgnoreCase("Confirmed")) {
+                            getStyleClass().add("status-badge-completed");
+                        } else if (status.equalsIgnoreCase("Pending")) {
+                            getStyleClass().add("status-badge-pending");
+                        } else if (status.equalsIgnoreCase("Cancelled")) {
+                            getStyleClass().add("status-badge-cancelled");
+                        }
+                    }
+                }
+            };
+        });
+        
         appointmentActionsColumn.setCellFactory(col -> {
             TableCell<Appointment, Button> cell = new TableCell<>() {
+                private final HBox actionsContainer = new HBox(5);
                 private final Button viewButton = new Button("View");
+                private final Button rescheduleButton = new Button("Reschedule");
                 
                 {
-                    viewButton.getStyleClass().add("action-button");
+                    viewButton.getStyleClass().addAll("record-action-button", "view");
+                    rescheduleButton.getStyleClass().addAll("record-action-button");
+                    
                     viewButton.setOnAction(event -> {
                         Appointment appointment = getTableView().getItems().get(getIndex());
                         handleViewAppointment(appointment);
                     });
+                    
+                    rescheduleButton.setOnAction(event -> {
+                        Appointment appointment = getTableView().getItems().get(getIndex());
+                        handleRescheduleAppointment(appointment);
+                    });
+                    
+                    actionsContainer.getChildren().addAll(viewButton, rescheduleButton);
+                    actionsContainer.setAlignment(Pos.CENTER_LEFT);
                 }
                 
                 @Override
@@ -140,7 +212,7 @@ public class DoctorDashboardController extends ModernDashboardController {
                     if (empty) {
                         setGraphic(null);
                     } else {
-                        setGraphic(viewButton);
+                        setGraphic(actionsContainer);
                     }
                 }
             };
@@ -159,6 +231,44 @@ public class DoctorDashboardController extends ModernDashboardController {
         noteSummaryColumn.setCellValueFactory(cellData -> 
             new SimpleStringProperty(cellData.getValue().getSummary()));
         
+        // Set up action column for notes
+        noteActionsColumn.setCellFactory(col -> {
+            TableCell<PatientNote, HBox> cell = new TableCell<>() {
+                private final HBox actionsContainer = new HBox(5);
+                private final Button viewButton = new Button("View");
+                private final Button editButton = new Button("Edit");
+                
+                {
+                    viewButton.getStyleClass().addAll("record-action-button", "view");
+                    editButton.getStyleClass().addAll("record-action-button");
+                    
+                    viewButton.setOnAction(event -> {
+                        PatientNote note = getTableView().getItems().get(getIndex());
+                        handleViewNote(note);
+                    });
+                    
+                    editButton.setOnAction(event -> {
+                        PatientNote note = getTableView().getItems().get(getIndex());
+                        handleEditNote(note);
+                    });
+                    
+                    actionsContainer.getChildren().addAll(viewButton, editButton);
+                    actionsContainer.setAlignment(Pos.CENTER_LEFT);
+                }
+                
+                @Override
+                protected void updateItem(HBox item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(actionsContainer);
+                    }
+                }
+            };
+            return cell;
+        });
+        
         // Load sample notes data
         loadSampleNotes();
         recentNotesTable.setItems(recentNotesList);
@@ -171,7 +281,8 @@ public class DoctorDashboardController extends ModernDashboardController {
         // Initialize demographics chart
         ObservableList<PieChart.Data> demographicsData = FXCollections.observableArrayList(
             new PieChart.Data("Male", 45),
-            new PieChart.Data("Female", 55)
+            new PieChart.Data("Female", 55),
+            new PieChart.Data("Other", 5)
         );
         demographicsChart.setData(demographicsData);
         
@@ -224,6 +335,30 @@ public class DoctorDashboardController extends ModernDashboardController {
     }
     
     /**
+     * Handle reschedule appointment action
+     */
+    private void handleRescheduleAppointment(Appointment appointment) {
+        // This would open a dialog to reschedule the appointment
+        showNotImplementedAlert("Reschedule Appointment");
+    }
+    
+    /**
+     * Handle view note action
+     */
+    private void handleViewNote(PatientNote note) {
+        // This would open a detailed view of the note
+        showNotImplementedAlert("View Patient Note");
+    }
+    
+    /**
+     * Handle edit note action
+     */
+    private void handleEditNote(PatientNote note) {
+        // This would open a dialog to edit the note
+        showNotImplementedAlert("Edit Patient Note");
+    }
+    
+    /**
      * Handle add appointment button click
      */
     @FXML
@@ -242,14 +377,50 @@ public class DoctorDashboardController extends ModernDashboardController {
     }
     
     /**
+     * Handle patient lookup button click
+     */
+    @FXML
+    private void handlePatientLookup() {
+        // This would open the patient search screen
+        showNotImplementedAlert("Patient Lookup");
+    }
+    
+    /**
+     * Handle add note button click
+     */
+    @FXML
+    private void handleAddNote() {
+        // This would open a dialog to add a new patient note
+        showNotImplementedAlert("Add Patient Note");
+    }
+    
+    /**
+     * Handle add task button click
+     */
+    @FXML
+    private void handleAddTask() {
+        // This would open a dialog to add a new task
+        showNotImplementedAlert("Add Task");
+    }
+    
+    /**
      * Show an alert for not implemented features
      */
     private void showNotImplementedAlert(String feature) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Feature Not Implemented");
         alert.setHeaderText(feature + " Feature");
-        alert.setContentText("The " + feature + " feature is not implemented in this preview.");
+        alert.setContentText("This feature is not yet implemented in the demo.");
         alert.showAndWait();
+    }
+    
+    /**
+     * Stop any running timelines when the controller is no longer needed
+     */
+    public void shutdown() {
+        if (clockTimeline != null) {
+            clockTimeline.stop();
+        }
     }
     
     /**

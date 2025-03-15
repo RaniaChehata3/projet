@@ -5,8 +5,10 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 /**
  * Data Access Object for MedicalRecord-related database operations
@@ -79,46 +81,119 @@ public class MedicalRecordDAO {
      */
     public boolean createMedicalRecord(MedicalRecord medicalRecord) {
         try (Connection conn = DatabaseConnection.getConnection()) {
+            // Debug info
+            System.out.println("Attempting to create new medical record with:");
+            System.out.println("- Patient ID: " + medicalRecord.getPatientId());
+            System.out.println("- Patient Name: " + medicalRecord.getPatientName());
+            System.out.println("- Doctor ID: " + medicalRecord.getDoctorId());
+            System.out.println("- Doctor Name: " + medicalRecord.getDoctorName());
+            System.out.println("- Visit Type: " + medicalRecord.getVisitType());
+            System.out.println("- Visit Date: " + (medicalRecord.getVisitDate() != null ? medicalRecord.getVisitDate() : "null"));
+            
+            // Check for valid patient ID (required constraint)
+            if (medicalRecord.getPatientId() <= 0) {
+                // Try to find patient ID by name
+                if (medicalRecord.getPatientName() != null && !medicalRecord.getPatientName().trim().isEmpty()) {
+                    int patientId = findPatientIdByName(conn, medicalRecord.getPatientName());
+                    if (patientId > 0) {
+                        medicalRecord.setPatientId(patientId);
+                        System.out.println("Found patient ID " + patientId + " for name: " + medicalRecord.getPatientName());
+                    } else {
+                        // If no patient found, use default patient ID 1 (John Doe)
+                        medicalRecord.setPatientId(1);
+                        System.out.println("Using default patient ID 1");
+                    }
+                } else {
+                    // No patient name, use default
+                    medicalRecord.setPatientId(1);
+                    System.out.println("Using default patient ID 1 due to missing patient information");
+                }
+            }
+            
+            // Check for valid doctor ID (required constraint)
+            if (medicalRecord.getDoctorId() <= 0) {
+                // Try to find doctor ID by name
+                if (medicalRecord.getDoctorName() != null && !medicalRecord.getDoctorName().trim().isEmpty()) {
+                    int doctorId = findDoctorIdByName(conn, medicalRecord.getDoctorName());
+                    if (doctorId > 0) {
+                        medicalRecord.setDoctorId(doctorId);
+                        System.out.println("Found doctor ID " + doctorId + " for name: " + medicalRecord.getDoctorName());
+                    } else {
+                        // If no doctor found, use default doctor ID 2 (Dr. John Smith)
+                        medicalRecord.setDoctorId(2);
+                        System.out.println("Using default doctor ID 2");
+                    }
+                } else {
+                    // No doctor name, use default
+                    medicalRecord.setDoctorId(2);
+                    System.out.println("Using default doctor ID 2 due to missing doctor information");
+                }
+            }
+            
+            // Ensure visit_type has a value (DEFAULT clause doesn't exist in table)
+            if (medicalRecord.getVisitType() == null || medicalRecord.getVisitType().trim().isEmpty()) {
+                medicalRecord.setVisitType("Regular visit");
+                System.out.println("Using default visit type: Regular visit");
+            }
+            
+            // Ensure visit_date has a value
+            if (medicalRecord.getVisitDate() == null) {
+                medicalRecord.setVisitDate(LocalDateTime.now());
+                System.out.println("Using current date/time for visit date");
+            }
+            
+            // Ensure status has a value
+            if (medicalRecord.getStatus() == null || medicalRecord.getStatus().trim().isEmpty()) {
+                medicalRecord.setStatus("Pending");
+                System.out.println("Using default status: Pending");
+            }
+            
+            // Prepare SQL statement with explicit column names
             String sql = "INSERT INTO medical_records (patient_id, patient_name, doctor_id, doctor_name, " +
                          "visit_type, visit_date, symptoms, diagnosis, treatment, notes, status, " +
                          "diagnosis_codes, attachments, follow_up_date, record_type) " +
                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                // Handle patient_id - Required field (NOT NULL)
-                if (medicalRecord.getPatientId() > 0) {
-                    stmt.setInt(1, medicalRecord.getPatientId());
+                // Set patient_id (NOT NULL field)
+                stmt.setInt(1, medicalRecord.getPatientId());
+                
+                // Set patient_name (can be NULL)
+                if (medicalRecord.getPatientName() != null) {
+                    stmt.setString(2, medicalRecord.getPatientName());
                 } else {
-                    // Default to 1 if not set - this prevents NOT NULL constraint violations
-                    // In a real app, you might want to throw an exception instead
-                    stmt.setInt(1, 1);
-                    System.err.println("Warning: Setting default patient_id=1 because no valid ID was provided");
+                    stmt.setNull(2, Types.VARCHAR);
                 }
                 
-                stmt.setString(2, medicalRecord.getPatientName());
+                // Set doctor_id (NOT NULL field)
+                stmt.setInt(3, medicalRecord.getDoctorId());
                 
-                // Handle doctor_id - Required field (NOT NULL)
-                if (medicalRecord.getDoctorId() > 0) {
-                    stmt.setInt(3, medicalRecord.getDoctorId());
+                // Set doctor_name (can be NULL)
+                if (medicalRecord.getDoctorName() != null) {
+                    stmt.setString(4, medicalRecord.getDoctorName());
                 } else {
-                    // Default to 1 if not set
-                    stmt.setInt(3, 1);
-                    System.err.println("Warning: Setting default doctor_id=1 because no valid ID was provided");
+                    stmt.setNull(4, Types.VARCHAR);
                 }
                 
-                stmt.setString(4, medicalRecord.getDoctorName());
-                stmt.setString(5, medicalRecord.getVisitType());
+                // Set visit_type
+                if (medicalRecord.getVisitType() != null) {
+                    stmt.setString(5, medicalRecord.getVisitType());
+                } else {
+                    stmt.setString(5, "Regular visit"); // Default value
+                }
                 
+                // Set visit_date (NOT NULL field)
                 if (medicalRecord.getVisitDate() != null) {
                     stmt.setTimestamp(6, Timestamp.valueOf(medicalRecord.getVisitDate()));
                 } else {
                     stmt.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
                 }
                 
-                stmt.setString(7, medicalRecord.getSymptoms());
-                stmt.setString(8, medicalRecord.getDiagnosis());
-                stmt.setString(9, medicalRecord.getTreatment());
-                stmt.setString(10, medicalRecord.getNotes());
+                // Set optional fields, handling null values properly
+                setStringOrNull(stmt, 7, medicalRecord.getSymptoms());
+                setStringOrNull(stmt, 8, medicalRecord.getDiagnosis());
+                setStringOrNull(stmt, 9, medicalRecord.getTreatment());
+                setStringOrNull(stmt, 10, medicalRecord.getNotes());
                 
                 // Set status with default if null
                 if (medicalRecord.getStatus() != null && !medicalRecord.getStatus().isEmpty()) {
@@ -127,8 +202,8 @@ public class MedicalRecordDAO {
                     stmt.setString(11, "Pending"); // Default value
                 }
                 
-                stmt.setString(12, medicalRecord.getDiagnosisCodes());
-                stmt.setString(13, medicalRecord.getAttachments());
+                setStringOrNull(stmt, 12, medicalRecord.getDiagnosisCodes());
+                setStringOrNull(stmt, 13, medicalRecord.getAttachments());
                 
                 // Handle follow_up_date (can be null)
                 if (medicalRecord.getFollowUpDate() != null) {
@@ -144,27 +219,93 @@ public class MedicalRecordDAO {
                     stmt.setString(15, "Regular visit"); // Default value
                 }
                 
+                // Execute the insert
                 int affectedRows = stmt.executeUpdate();
                 
                 if (affectedRows == 0) {
+                    System.err.println("Creating medical record failed, no rows affected.");
                     return false;
                 }
                 
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        medicalRecord.setRecordId(generatedKeys.getInt(1));
-                        System.out.println("Created record with ID: " + medicalRecord.getRecordId());
+                        int newId = generatedKeys.getInt(1);
+                        medicalRecord.setRecordId(newId);
+                        System.out.println("Created record with ID: " + newId);
                         return true;
                     } else {
+                        System.err.println("Creating medical record failed, no ID obtained.");
                         return false;
                     }
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error creating medical record: " + e.getMessage());
+            System.err.println("SQL Error creating medical record: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            System.err.println("Unexpected error creating medical record: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
+    }
+    
+    /**
+     * Helper method to set a string value or NULL in a PreparedStatement
+     */
+    private void setStringOrNull(PreparedStatement stmt, int parameterIndex, String value) throws SQLException {
+        if (value != null) {
+            stmt.setString(parameterIndex, value);
+        } else {
+            stmt.setNull(parameterIndex, Types.VARCHAR);
+        }
+    }
+    
+    /**
+     * Find a patient ID by name
+     */
+    private int findPatientIdByName(Connection conn, String patientName) {
+        try {
+            String sql = "SELECT patient_id FROM patients WHERE full_name LIKE ? OR " +
+                         "CONCAT(first_name, ' ', last_name) LIKE ?";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                String searchPattern = "%" + patientName + "%";
+                stmt.setString(1, searchPattern);
+                stmt.setString(2, searchPattern);
+                
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt("patient_id");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding patient ID: " + e.getMessage());
+        }
+        return -1;
+    }
+    
+    /**
+     * Find a doctor ID by name
+     */
+    private int findDoctorIdByName(Connection conn, String doctorName) {
+        try {
+            String sql = "SELECT user_id FROM users WHERE full_name LIKE ? AND role = 'DOCTOR'";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, "%" + doctorName + "%");
+                
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getInt("user_id");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding doctor ID: " + e.getMessage());
+        }
+        return -1;
     }
     
     /**
@@ -175,6 +316,79 @@ public class MedicalRecordDAO {
      */
     public boolean updateMedicalRecord(MedicalRecord medicalRecord) {
         try (Connection conn = DatabaseConnection.getConnection()) {
+            // Debug info
+            System.out.println("Attempting to update medical record ID " + medicalRecord.getRecordId() + " with:");
+            System.out.println("- Patient ID: " + medicalRecord.getPatientId());
+            System.out.println("- Patient Name: " + medicalRecord.getPatientName());
+            System.out.println("- Doctor ID: " + medicalRecord.getDoctorId());
+            System.out.println("- Doctor Name: " + medicalRecord.getDoctorName());
+            System.out.println("- Visit Type: " + medicalRecord.getVisitType());
+            System.out.println("- Visit Date: " + (medicalRecord.getVisitDate() != null ? medicalRecord.getVisitDate() : "null"));
+            
+            // Check for valid record ID
+            if (medicalRecord.getRecordId() <= 0) {
+                System.err.println("Cannot update record with invalid ID: " + medicalRecord.getRecordId());
+                return false;
+            }
+            
+            // Check for valid patient ID (required constraint)
+            if (medicalRecord.getPatientId() <= 0) {
+                // Try to find patient ID by name
+                if (medicalRecord.getPatientName() != null && !medicalRecord.getPatientName().trim().isEmpty()) {
+                    int patientId = findPatientIdByName(conn, medicalRecord.getPatientName());
+                    if (patientId > 0) {
+                        medicalRecord.setPatientId(patientId);
+                        System.out.println("Found patient ID " + patientId + " for name: " + medicalRecord.getPatientName());
+                    } else {
+                        // If no patient found, use default patient ID 1 (John Doe)
+                        medicalRecord.setPatientId(1);
+                        System.out.println("Using default patient ID 1");
+                    }
+                } else {
+                    // No patient name, use default
+                    medicalRecord.setPatientId(1);
+                    System.out.println("Using default patient ID 1 due to missing patient information");
+                }
+            }
+            
+            // Check for valid doctor ID (required constraint)
+            if (medicalRecord.getDoctorId() <= 0) {
+                // Try to find doctor ID by name
+                if (medicalRecord.getDoctorName() != null && !medicalRecord.getDoctorName().trim().isEmpty()) {
+                    int doctorId = findDoctorIdByName(conn, medicalRecord.getDoctorName());
+                    if (doctorId > 0) {
+                        medicalRecord.setDoctorId(doctorId);
+                        System.out.println("Found doctor ID " + doctorId + " for name: " + medicalRecord.getDoctorName());
+                    } else {
+                        // If no doctor found, use default doctor ID 2 (Dr. John Smith)
+                        medicalRecord.setDoctorId(2);
+                        System.out.println("Using default doctor ID 2");
+                    }
+                } else {
+                    // No doctor name, use default
+                    medicalRecord.setDoctorId(2);
+                    System.out.println("Using default doctor ID 2 due to missing doctor information");
+                }
+            }
+            
+            // Ensure visit_type has a value (DEFAULT clause doesn't exist in table)
+            if (medicalRecord.getVisitType() == null || medicalRecord.getVisitType().trim().isEmpty()) {
+                medicalRecord.setVisitType("Regular visit");
+                System.out.println("Using default visit type: Regular visit");
+            }
+            
+            // Ensure visit_date has a value
+            if (medicalRecord.getVisitDate() == null) {
+                medicalRecord.setVisitDate(LocalDateTime.now());
+                System.out.println("Using current date/time for visit date");
+            }
+            
+            // Ensure status has a value
+            if (medicalRecord.getStatus() == null || medicalRecord.getStatus().trim().isEmpty()) {
+                medicalRecord.setStatus("Pending");
+                System.out.println("Using default status: Pending");
+            }
+            
             String sql = "UPDATE medical_records SET patient_id = ?, patient_name = ?, " +
                          "doctor_id = ?, doctor_name = ?, visit_type = ?, visit_date = ?, " +
                          "symptoms = ?, diagnosis = ?, treatment = ?, notes = ?, status = ?, " +
@@ -182,39 +396,45 @@ public class MedicalRecordDAO {
                          "WHERE record_id = ?";
             
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                // Handle patient_id - Required field (NOT NULL)
-                if (medicalRecord.getPatientId() > 0) {
-                    stmt.setInt(1, medicalRecord.getPatientId());
+                // Set patient_id (NOT NULL field)
+                stmt.setInt(1, medicalRecord.getPatientId());
+                
+                // Set patient_name (can be NULL)
+                if (medicalRecord.getPatientName() != null) {
+                    stmt.setString(2, medicalRecord.getPatientName());
                 } else {
-                    // Default to 1 if not set
-                    stmt.setInt(1, 1);
-                    System.err.println("Warning: Setting default patient_id=1 because no valid ID was provided");
+                    stmt.setNull(2, Types.VARCHAR);
                 }
                 
-                stmt.setString(2, medicalRecord.getPatientName());
+                // Set doctor_id (NOT NULL field)
+                stmt.setInt(3, medicalRecord.getDoctorId());
                 
-                // Handle doctor_id - Required field (NOT NULL)
-                if (medicalRecord.getDoctorId() > 0) {
-                    stmt.setInt(3, medicalRecord.getDoctorId());
+                // Set doctor_name (can be NULL)
+                if (medicalRecord.getDoctorName() != null) {
+                    stmt.setString(4, medicalRecord.getDoctorName());
                 } else {
-                    // Default to 1 if not set
-                    stmt.setInt(3, 1);
-                    System.err.println("Warning: Setting default doctor_id=1 because no valid ID was provided");
+                    stmt.setNull(4, Types.VARCHAR);
                 }
                 
-                stmt.setString(4, medicalRecord.getDoctorName());
-                stmt.setString(5, medicalRecord.getVisitType());
+                // Set visit_type
+                if (medicalRecord.getVisitType() != null) {
+                    stmt.setString(5, medicalRecord.getVisitType());
+                } else {
+                    stmt.setString(5, "Regular visit"); // Default value
+                }
                 
+                // Set visit_date (NOT NULL field)
                 if (medicalRecord.getVisitDate() != null) {
                     stmt.setTimestamp(6, Timestamp.valueOf(medicalRecord.getVisitDate()));
                 } else {
                     stmt.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
                 }
                 
-                stmt.setString(7, medicalRecord.getSymptoms());
-                stmt.setString(8, medicalRecord.getDiagnosis());
-                stmt.setString(9, medicalRecord.getTreatment());
-                stmt.setString(10, medicalRecord.getNotes());
+                // Set optional fields, handling null values properly
+                setStringOrNull(stmt, 7, medicalRecord.getSymptoms());
+                setStringOrNull(stmt, 8, medicalRecord.getDiagnosis());
+                setStringOrNull(stmt, 9, medicalRecord.getTreatment());
+                setStringOrNull(stmt, 10, medicalRecord.getNotes());
                 
                 // Set status with default if null
                 if (medicalRecord.getStatus() != null && !medicalRecord.getStatus().isEmpty()) {
@@ -223,8 +443,8 @@ public class MedicalRecordDAO {
                     stmt.setString(11, "Pending"); // Default value
                 }
                 
-                stmt.setString(12, medicalRecord.getDiagnosisCodes());
-                stmt.setString(13, medicalRecord.getAttachments());
+                setStringOrNull(stmt, 12, medicalRecord.getDiagnosisCodes());
+                setStringOrNull(stmt, 13, medicalRecord.getAttachments());
                 
                 // Handle follow_up_date (can be null)
                 if (medicalRecord.getFollowUpDate() != null) {
@@ -240,14 +460,26 @@ public class MedicalRecordDAO {
                     stmt.setString(15, "Regular visit"); // Default value
                 }
                 
+                // Set record_id for WHERE clause
                 stmt.setInt(16, medicalRecord.getRecordId());
                 
+                // Execute the update
                 int affectedRows = stmt.executeUpdate();
                 System.out.println("Updated record ID: " + medicalRecord.getRecordId() + ", Affected rows: " + affectedRows);
-                return affectedRows > 0;
+                
+                if (affectedRows > 0) {
+                    return true;
+                } else {
+                    System.err.println("No record found with ID: " + medicalRecord.getRecordId());
+                    return false;
+                }
             }
         } catch (SQLException e) {
-            System.err.println("Error updating medical record: " + e.getMessage());
+            System.err.println("SQL Error updating medical record: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            System.err.println("Unexpected error updating medical record: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -397,52 +629,81 @@ public class MedicalRecordDAO {
     }
     
     /**
-     * Get medical records filtered by multiple criteria
-     * 
-     * @param patientName Patient name filter (optional)
-     * @param recordType Record type filter (optional)
-     * @param status Status filter (optional)
-     * @param startDate Start date filter (optional)
-     * @param endDate End date filter (optional)
-     * @param offset Pagination offset
-     * @param limit Pagination limit
-     * @return List of filtered medical records
+     * Get filtered medical records based on various criteria
      */
     public List<MedicalRecord> getFilteredMedicalRecords(String patientName, String recordType, 
                                                         String status, Date startDate, Date endDate, 
-                                                        int offset, int limit) {
+                                                        Integer doctorId, int offset, int limit) {
         List<MedicalRecord> records = new ArrayList<>();
         StringBuilder sqlBuilder = new StringBuilder("SELECT * FROM medical_records WHERE 1=1");
         List<Object> params = new ArrayList<>();
         
+        System.out.println("Building SQL filter query:");
+        
         if (patientName != null && !patientName.isEmpty()) {
             sqlBuilder.append(" AND patient_name LIKE ?");
             params.add("%" + patientName + "%");
+            System.out.println("- Added patient name filter: " + patientName);
         }
         
-        if (recordType != null && !recordType.isEmpty()) {
-            sqlBuilder.append(" AND visit_type = ?");
-            params.add(recordType);
+        if (recordType != null && !recordType.isEmpty() && !"All Records".equals(recordType)) {
+            // Handle "Recent Records" as a special case
+            if ("Recent Records".equals(recordType)) {
+                sqlBuilder.append(" AND visit_date >= ?");
+                Calendar cal = Calendar.getInstance();
+                cal.add(Calendar.DAY_OF_MONTH, -7);
+                params.add(new Date(cal.getTimeInMillis()));
+                System.out.println("- Added recent records filter (last 7 days)");
+            } else {
+                // Normal record type filtering
+                sqlBuilder.append(" AND (visit_type = ? OR record_type = ?)");
+                params.add(recordType);
+                params.add(recordType);
+                System.out.println("- Added record type filter: " + recordType);
+            }
         }
         
-        if (status != null && !status.isEmpty()) {
+        if (status != null && !status.isEmpty() && !"All Statuses".equals(status)) {
             sqlBuilder.append(" AND status = ?");
             params.add(status);
+            System.out.println("- Added status filter: " + status);
         }
         
         if (startDate != null) {
-            sqlBuilder.append(" AND visit_date >= ?");
-            params.add(startDate);
+            // For single date filtering (when only startDate is provided),
+            // ensure we get the entire day by using >= date 00:00:00 and < date+1 00:00:00
+            if (endDate == null) {
+                sqlBuilder.append(" AND DATE(visit_date) = DATE(?)");
+                params.add(startDate);
+                System.out.println("- Added date filter for specific day: " + startDate);
+            } else {
+                sqlBuilder.append(" AND visit_date >= ?");
+                params.add(startDate);
+                System.out.println("- Added start date filter: " + startDate);
+            }
         }
         
         if (endDate != null) {
-            sqlBuilder.append(" AND visit_date <= ?");
-            params.add(endDate);
+            // Only used if this is a date range query, not a single day query
+            if (startDate != null) {
+                sqlBuilder.append(" AND visit_date <= ?");
+                params.add(endDate);
+                System.out.println("- Added end date filter: " + endDate);
+            }
+        }
+        
+        // Add doctor ID filter if provided
+        if (doctorId != null && doctorId > 0) {
+            sqlBuilder.append(" AND doctor_id = ?");
+            params.add(doctorId);
+            System.out.println("- Added doctor filter: " + doctorId);
         }
         
         sqlBuilder.append(" ORDER BY visit_date DESC LIMIT ? OFFSET ?");
         params.add(limit);
         params.add(offset);
+        
+        System.out.println("Final SQL query: " + sqlBuilder.toString());
         
         try (Connection conn = DatabaseConnection.getConnection()) {
             try (PreparedStatement stmt = conn.prepareStatement(sqlBuilder.toString())) {
@@ -462,6 +723,8 @@ public class MedicalRecordDAO {
                 while (rs.next()) {
                     records.add(mapResultSetToMedicalRecord(rs));
                 }
+                
+                System.out.println("Query returned " + records.size() + " records");
             }
         } catch (SQLException e) {
             System.err.println("Error retrieving filtered medical records: " + e.getMessage());
@@ -480,31 +743,89 @@ public class MedicalRecordDAO {
     public MedicalRecord convertToDbFormat(com.example.demo.controller.MedicalRecordsController.MedicalRecord controllerRecord) {
         MedicalRecord dbRecord = new MedicalRecord();
         
+        System.out.println("Converting UI record to database format:");
+        
         // Parse ID (remove "MR-" prefix if present)
         String id = controllerRecord.getId();
-        if (id.startsWith("MR-")) {
-            try {
-                dbRecord.setRecordId(Integer.parseInt(id.substring(3)));
-            } catch (NumberFormatException e) {
-                // Generate a new ID if parsing fails
-                dbRecord.setRecordId(0);
+        System.out.println("- Original ID: " + id);
+        
+        if (id != null) {
+            if (id.startsWith("MR-")) {
+                try {
+                    dbRecord.setRecordId(Integer.parseInt(id.substring(3)));
+                } catch (NumberFormatException e) {
+                    // Generate a new ID if parsing fails
+                    dbRecord.setRecordId(0);
+                    System.out.println("  Could not parse ID, will generate new record");
+                }
+            } else {
+                try {
+                    dbRecord.setRecordId(Integer.parseInt(id));
+                } catch (NumberFormatException e) {
+                    // Generate a new ID if parsing fails
+                    dbRecord.setRecordId(0);
+                    System.out.println("  Could not parse ID, will generate new record");
+                }
             }
         } else {
-            try {
-                dbRecord.setRecordId(Integer.parseInt(id));
-            } catch (NumberFormatException e) {
-                // Generate a new ID if parsing fails
-                dbRecord.setRecordId(0);
-            }
+            dbRecord.setRecordId(0); // New record
+            System.out.println("  Null ID, will generate new record");
         }
         
-        // Set patient and doctor names
-        dbRecord.setPatientName(controllerRecord.getPatient());
-        dbRecord.setDoctorName(controllerRecord.getDoctor());
+        System.out.println("- DB Record ID set to: " + dbRecord.getRecordId());
         
-        // Set type, status, notes, etc.
-        dbRecord.setVisitType(controllerRecord.getType());
-        dbRecord.setStatus(controllerRecord.getStatus());
+        // Handle patient ID and name
+        try {
+            Integer patientId = controllerRecord.getPatientId();
+            if (patientId != null && patientId > 0) {
+                dbRecord.setPatientId(patientId);
+                System.out.println("- Using provided patient ID: " + patientId);
+            } else {
+                // Will be resolved during save/update
+                dbRecord.setPatientId(0);
+                System.out.println("- No valid patient ID provided");
+            }
+        } catch (Exception e) {
+            dbRecord.setPatientId(0);
+            System.out.println("- Error getting patient ID: " + e.getMessage());
+        }
+        
+        // Set patient name
+        String patientName = controllerRecord.getPatient();
+        dbRecord.setPatientName(patientName);
+        System.out.println("- Patient name: " + (patientName != null ? patientName : "null"));
+        
+        // Handle doctor ID and name
+        try {
+            Integer doctorId = controllerRecord.getDoctorId();
+            if (doctorId != null && doctorId > 0) {
+                dbRecord.setDoctorId(doctorId);
+                System.out.println("- Using provided doctor ID: " + doctorId);
+            } else {
+                // Will be resolved during save/update
+                dbRecord.setDoctorId(0);
+                System.out.println("- No valid doctor ID provided");
+            }
+        } catch (Exception e) {
+            dbRecord.setDoctorId(0);
+            System.out.println("- Error getting doctor ID: " + e.getMessage());
+        }
+        
+        // Set doctor name
+        String doctorName = controllerRecord.getDoctor();
+        dbRecord.setDoctorName(doctorName);
+        System.out.println("- Doctor name: " + (doctorName != null ? doctorName : "null"));
+        
+        // Set type, status, notes, etc. with null checks
+        String type = controllerRecord.getType();
+        dbRecord.setVisitType(type != null ? type : "Regular visit");
+        System.out.println("- Visit type: " + dbRecord.getVisitType());
+        
+        String status = controllerRecord.getStatus();
+        dbRecord.setStatus(status != null ? status : "Pending");
+        System.out.println("- Status: " + dbRecord.getStatus());
+        
+        // Handle optional fields
         dbRecord.setNotes(controllerRecord.getNotes());
         dbRecord.setDiagnosisCodes(controllerRecord.getDiagnosisCodes());
         dbRecord.setAttachments(controllerRecord.getAttachments());
@@ -513,20 +834,42 @@ public class MedicalRecordDAO {
         dbRecord.setTreatment(controllerRecord.getTreatment());
         
         // For compatibility with both tables - visit_type and record_type are the same
-        dbRecord.setRecordType(controllerRecord.getType());
+        dbRecord.setRecordType(type != null ? type : "Regular visit");
         
-        // Parse date
+        // Parse date with error handling
         try {
-            LocalDateTime visitDate = LocalDateTime.parse(controllerRecord.getDate() + "T00:00:00");
-            dbRecord.setVisitDate(visitDate);
+            String dateStr = controllerRecord.getDate();
+            if (dateStr != null && !dateStr.trim().isEmpty()) {
+                try {
+                    LocalDateTime visitDate = LocalDateTime.parse(dateStr + "T00:00:00");
+                    dbRecord.setVisitDate(visitDate);
+                    System.out.println("- Parsed visit date: " + visitDate);
+                } catch (Exception e) {
+                    System.out.println("- Error parsing date format '" + dateStr + "', trying alternative formats");
+                    
+                    // Try alternative formats
+                    try {
+                        // Try to parse as MM/dd/yyyy
+                        DateTimeFormatter alternateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+                        LocalDate date = LocalDate.parse(dateStr, alternateFormatter);
+                        dbRecord.setVisitDate(date.atStartOfDay());
+                        System.out.println("- Parsed alternative date format: " + date);
+                    } catch (Exception e2) {
+                        // Default to current date/time
+                        dbRecord.setVisitDate(LocalDateTime.now());
+                        System.out.println("- Defaulting to current date/time: " + dbRecord.getVisitDate());
+                    }
+                }
+            } else {
+                // Default to current date/time if date is null or empty
+                dbRecord.setVisitDate(LocalDateTime.now());
+                System.out.println("- No date provided, using current date/time: " + dbRecord.getVisitDate());
+            }
         } catch (Exception e) {
+            // Default to current date/time for any error
             dbRecord.setVisitDate(LocalDateTime.now());
+            System.out.println("- Error handling date, using current date/time: " + dbRecord.getVisitDate());
         }
-        
-        // Print debug info
-        System.out.println("Converting to DB format - ID: " + dbRecord.getRecordId() + 
-                           ", Patient: " + dbRecord.getPatientName() + 
-                           ", Type: " + dbRecord.getVisitType());
         
         return dbRecord;
     }

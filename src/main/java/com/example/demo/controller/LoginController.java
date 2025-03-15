@@ -186,7 +186,7 @@ public class LoginController {
      */
     @FXML
     private void loginAsAdmin(ActionEvent event) {
-        loginWithCredentials("sys_admin", "password");
+        loginWithCredentials("admin", "password");
     }
 
     /**
@@ -202,7 +202,7 @@ public class LoginController {
      */
     @FXML
     private void loginAsPatient(ActionEvent event) {
-        loginWithCredentials("john_patient", "password");
+        loginWithCredentials("patient", "password");
     }
 
     /**
@@ -210,7 +210,7 @@ public class LoginController {
      */
     @FXML
     private void loginAsLaboratory(ActionEvent event) {
-        loginWithCredentials("lab_tech", "password");
+        loginWithCredentials("lab", "password");
     }
 
     /**

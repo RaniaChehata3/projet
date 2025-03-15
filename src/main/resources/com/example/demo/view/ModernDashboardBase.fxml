@@ -11,7 +11,7 @@
             xmlns:fx="http://javafx.org/fxml"
             fx:controller="com.example.demo.controller.ModernDashboardController"
             styleClass="modern-container"
-            stylesheets="@../css/modern-theme.css">
+            stylesheets="@../css/modern-theme.css, @../css/fonts.css">
     
     <!-- Top Bar with application logo, search, user info -->
     <top>
@@ -48,12 +48,35 @@
                         <Label fx:id="userRoleLabel" text="Role" styleClass="user-role"/>
                     </VBox>
                     
-                    <MenuButton styleClass="user-menu-button">
+                    <MenuButton fx:id="userMenuButton" styleClass="user-menu-button">
+                        <graphic>
+                            <StackPane styleClass="menu-arrow-container">
+                                <Text styleClass="menu-icon">▼</Text>
+                            </StackPane>
+                        </graphic>
                         <items>
-                            <MenuItem text="My Profile" onAction="#handleViewProfile"/>
-                            <MenuItem text="Account Settings" onAction="#handleSettings"/>
+                            <MenuItem text="My Profile" onAction="#handleViewProfile">
+                                <graphic>
+                                    <StackPane styleClass="menu-item-icon-container">
+                                        <Text styleClass="menu-icon">👤</Text>
+                                    </StackPane>
+                                </graphic>
+                            </MenuItem>
+                            <MenuItem text="Account Settings" onAction="#handleSettings">
+                                <graphic>
+                                    <StackPane styleClass="menu-item-icon-container">
+                                        <Text styleClass="menu-icon">⚙️</Text>
+                                    </StackPane>
+                                </graphic>
+                            </MenuItem>
                             <SeparatorMenuItem />
-                            <MenuItem text="Logout" onAction="#handleLogout"/>
+                            <MenuItem text="Logout" onAction="#handleLogout" styleClass="logout-menu-item">
+                                <graphic>
+                                    <StackPane styleClass="menu-item-icon-container">
+                                        <Text styleClass="menu-icon">🚪</Text>
+                                    </StackPane>
+                                </graphic>
+                            </MenuItem>
                         </items>
                     </MenuButton>
                 </HBox>

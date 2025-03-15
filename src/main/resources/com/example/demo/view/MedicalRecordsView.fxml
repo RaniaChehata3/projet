@@ -24,8 +24,15 @@
                 <Insets top="30" right="25" bottom="25" left="25"/>
             </padding>
             
-            <Label text="Medical Records" styleClass="enhanced-section-title"/>
-            <Label text="View and manage patient medical records" styleClass="enhanced-section-subtitle"/>
+            <!-- Header section with title and logout button -->
+            <HBox alignment="CENTER_LEFT">
+                <VBox HBox.hgrow="ALWAYS">
+                    <Label text="Medical Records" styleClass="enhanced-section-title"/>
+                    <Label text="View and manage patient medical records" styleClass="enhanced-section-subtitle"/>
+                </VBox>
+                
+                
+            </HBox>
             
             <!-- Dashboard Stats Section -->
             <HBox spacing="20" alignment="CENTER">

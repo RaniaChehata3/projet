@@ -70,6 +70,30 @@ public class NavigationUtil {
     }
     
     /**
+     * Navigate between dashboards properly
+     * This method handles dashboard navigation to prevent nested dashboards
+     * 
+     * @param node Any node from the current scene
+     * @param dashboardPath The full path to the dashboard FXML
+     * @throws IOException If the FXML file cannot be loaded
+     */
+    public static void navigateToDashboard(javafx.scene.Node node, String dashboardPath) throws IOException {
+        if (node == null || node.getScene() == null) {
+            throw new IllegalArgumentException("Invalid node or scene");
+        }
+        
+        // Always replace the entire scene when navigating to a dashboard
+        Stage stage = (Stage) node.getScene().getWindow();
+        FXMLLoader loader = new FXMLLoader(NavigationUtil.class.getResource(dashboardPath));
+        Parent root = loader.load();
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        
+        // Configure stage size to fit screen
+        adjustStageToScreen(stage);
+    }
+    
+    /**
      * Adjust a stage to fit properly on the screen
      * 
      * @param stage The stage to adjust

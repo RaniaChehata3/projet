@@ -45,7 +45,7 @@ public class SessionManager {
         String sessionId = generateSessionId();
         
         try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "INSERT INTO auth_sessions (session_id, user_id, expiry_time, ip_address, device_info) " +
+            String sql = "INSERT INTO sessions (session_id, user_id, ip_address, device_info, expires_at) " +
                          "VALUES (?, ?, ?, ?, ?)";
             
             // Calculate expiry time (current time + session duration)
@@ -54,9 +54,9 @@ public class SessionManager {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, sessionId);
             stmt.setInt(2, user.getUserId());
-            stmt.setTimestamp(3, Timestamp.valueOf(expiryTime));
-            stmt.setString(4, ipAddress);
-            stmt.setString(5, deviceInfo);
+            stmt.setString(3, ipAddress);
+            stmt.setString(4, deviceInfo);
+            stmt.setTimestamp(5, Timestamp.valueOf(expiryTime));
             
             stmt.executeUpdate();
             
@@ -76,9 +76,9 @@ public class SessionManager {
      */
     public Optional<User> validateSession(String sessionId) {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "SELECT u.* FROM auth_sessions s " +
+            String sql = "SELECT u.* FROM sessions s " +
                          "JOIN users u ON s.user_id = u.user_id " +
-                         "WHERE s.session_id = ? AND s.expiry_time > ?";
+                         "WHERE s.session_id = ? AND s.expires_at > ?";
             
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, sessionId);
@@ -97,7 +97,7 @@ public class SessionManager {
                     rs.getString("full_name"),
                     rs.getString("phone"),
                     rs.getString("address"),
-                    rs.getTimestamp("registration_date"),
+                    rs.getTimestamp("created_at"),
                     rs.getTimestamp("last_login"),
                     rs.getBoolean("active")
                 );
@@ -121,7 +121,7 @@ public class SessionManager {
      */
     public boolean removeSession(String sessionId) {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "DELETE FROM auth_sessions WHERE session_id = ?";
+            String sql = "DELETE FROM sessions WHERE session_id = ?";
             
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, sessionId);
@@ -144,7 +144,7 @@ public class SessionManager {
      */
     public int cleanupExpiredSessions() {
         try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "DELETE FROM auth_sessions WHERE expiry_time <= ?";
+            String sql = "DELETE FROM sessions WHERE expires_at <= ?";
             
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));

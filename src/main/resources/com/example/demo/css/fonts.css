@@ -1,0 +1,28 @@
+/* Font CSS for Icon Loading */
+
+/* Icon Font (using Material Design Icons Unicode) */
+@font-face {
+    font-family: 'Material Icons';
+    src: url('../fonts/MaterialIcons-Regular.ttf');
+}
+
+/* Define icon classes */
+.material-icon {
+    -fx-font-family: 'Material Icons';
+    -fx-font-size: 18px;
+    -fx-fill: -fx-text-color;
+}
+
+/* Define CSS Icon classes to use instead of Font Awesome */
+.icon-user:before { content: "\e7fd"; }
+.icon-settings:before { content: "\e8b8"; }
+.icon-logout:before { content: "\e9ba"; }
+.icon-chevron-down:before { content: "\e5cf"; }
+.icon-notification:before { content: "\e7f4"; }
+.icon-dashboard:before { content: "\e871"; }
+.icon-medical:before { content: "\e87c"; }
+.icon-person:before { content: "\e7fd"; }
+.icon-lab:before { content: "\ea3a"; }
+.icon-calendar:before { content: "\e935"; }
+.icon-analytics:before { content: "\e6e1"; }
+.icon-help:before { content: "\e887"; } 
